@@ -1,0 +1,486 @@
+.dashboard {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h2, h3 {
+    text-align: center;
+    color: #333;
+}
+
+.addServiceSection, .serviceListSection {
+    margin-top: 20px;
+}
+
+input {
+    width: 50%;
+    padding: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.addButton {
+    display: block; 
+    margin: 20px auto 0; 
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgb(221, 189, 13) 0%, rgb(222, 89, 1) 100%);
+    box-shadow: 0 0 20px rgba(254, 91, 20, 0.4);
+    cursor: pointer;
+    padding: 0 34px;
+    font: 600 16px/56px 'Mulish', sans-serif;
+    color: #fff;
+    border: none;
+}
+
+.addButton:hover {
+    box-shadow: 0 0 25px rgba(254, 91, 20, 0.6);
+}
+
+.serviceList {
+    list-style-type: none;
+    padding: 0;
+}
+
+.serviceItem {
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    text-align: center;
+    font-family: 'Mulish', sans-serif; 
+    font-size: 16px; 
+    font-weight: 500;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.serviceItem button {
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgb(221, 189, 13) 0%, rgb(222, 89, 1) 100%);
+    box-shadow: 0 0 15px rgba(254, 91, 20, 0.4);
+    cursor: pointer;
+    padding: 0 24px;
+    font: 600 14px/40px 'Mulish', sans-serif; 
+    color: #fff;
+    border: none;
+    margin-left: 10px; 
+}
+
+.serviceItem button:hover {
+    box-shadow: 0 0 25px rgba(254, 91, 20, 0.6);
+}
+
+.reviewListSection {
+    margin-top: 20px;
+}
+
+.reviewList {
+    list-style-type: none;
+    padding: 0;
+}
+
+.reviewItem {
+    text-align: center;
+    font-family: 'Mulish', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.timetableSection {
+    margin-bottom: 20px;
+}
+
+.timetableList {
+    list-style-type: none;
+    padding: 0;
+}
+
+.timetableItem {
+    text-align: center;
+    font-family: 'Mulish', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.timetableItem div {
+    margin-bottom: 5px; 
+    text-align: center; 
+}
+.analyticsSection {
+    margin-top: 20px; 
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.analyticsSection h3 {
+     text-align: center;
+     color: #333; 
+     margin-top: 0;
+}
+
+.reportParameters {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f1f1f1;
+    display: flex; 
+    flex-direction: column; 
+    flex-wrap: wrap; 
+    align-items: center; 
+    gap: 10px; 
+}
+.reportParameters > select:first-child {
+    margin-bottom: 0; 
+}
+
+.reportParameters input[type="date"],
+.reportParameters input[type="datetime-local"],
+.reportParameters select {
+    width: auto; 
+    flex-grow: 1; 
+    max-width: 200px; 
+    margin-right: 0; 
+    margin-bottom: 0; 
+    padding: 8px;
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
+    box-sizing: border-box;
+}
+
+.reportParameters label {
+    font-weight: bold; 
+}
+
+.reportParameters input[type="checkbox"] {
+     width: auto;
+     margin-right: 5px;
+     vertical-align: middle; 
+}
+.reportParameters label input[type="checkbox"] {
+     margin-right: 5px; 
+     margin-bottom: 0; 
+}
+
+.serviceFilter {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+     flex-wrap: wrap;
+     flex-grow: 1; 
+}
+
+.serviceFilter label {
+     font-weight: bold; 
+}
+
+.reportParameters button {
+     border-radius: 15px; 
+     background: linear-gradient(135deg, rgb(221, 189, 13) 0%, rgb(222, 89, 1) 100%); 
+     box-shadow: 0 0 20px rgba(254, 91, 20, 0.4); 
+     cursor: pointer; 
+     padding: 0 24px; 
+     font: 600 16px/40px 'Mulish', sans-serif; 
+     color: #fff; 
+     border: none; 
+     margin-left: 10px; 
+     margin-top: 0; 
+}
+
+.reportParameters button:hover {
+     box-shadow: 0 0 25px rgba(254, 91, 20, 0.6); 
+}
+
+.reportResults {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.reportResults h4, .reportResults h5 {
+    color: #555; 
+    margin-top: 15px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #ccc; 
+    padding-bottom: 5px;
+}
+
+.visitGraph {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    background-color: #fff;
+    min-height: 300px; 
+    position: relative; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    flex-direction: column; 
+}
+
+.visitGraph p {
+    color: #777;
+}
+
+.averageRatings {
+    margin-top: 20px; 
+}
+
+.averageRatings h5 {
+     margin-top: 0; 
+}
+
+.averageRatings ul {
+    list-style: none;
+    padding: 0;
+}
+
+.averageRatings li {
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 8px;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    flex-wrap: wrap;
+    font-family: 'Mulish', sans-serif; 
+    font-size: 16px;
+    font-weight: 500; 
+}
+
+.averageRatings .star {
+    color: gold; 
+    font-size: 20px;
+    margin-left: 5px;
+}
+
+.reportTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-family: 'Mulish', sans-serif; 
+    font-size: 16px; 
+    font-weight: 500; 
+}
+
+.reportTable th,
+.reportTable td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+
+.reportTable th {
+    background-color: #eee;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .reportParameters {
+        flex-direction: column; 
+        align-items: flex-start;
+        gap: 10px; 
+    }
+
+     .reportParameters label,
+     .reportParameters input[type="date"],
+     .reportParameters input[type="datetime-local"],
+     .reportParameters select,
+     .reportParameters button,
+     .reportParameters label input[type="checkbox"] {
+         width: 100%; 
+         max-width: none; 
+         margin-left: 0 !important; 
+         margin-right: 0; 
+         margin-bottom: 0; 
+         box-sizing: border-box; 
+     }
+     .reportParameters label {
+          margin-bottom: -5px; 
+     }
+
+     .reportParameters label input[type="checkbox"] {
+         width: auto; 
+          margin-right: 5px;
+          margin-bottom: 0; 
+     }
+
+     .serviceFilter {
+          flex-direction: column; 
+          align-items: flex-start;
+          gap: 5px;
+          width: 100%; 
+     }
+     .serviceFilter label,
+     .serviceFilter select {
+          width: 100%; 
+     }
+
+    .averageRatings li {
+         flex-direction: column;
+         align-items: flex-start;
+    }
+     .averageRatings li span { 
+          margin-top: 5px;
+     }
+
+     .reportTable, .reportTable thead, .reportTable tbody, .reportTable th, .reportTable td, .reportTable tr {
+         display: block;
+     }
+     .reportTable thead tr {
+         position: absolute; top: -9999px; left: -9999px;
+     }
+     .reportTable tr { border: 1px solid #ccc; margin-bottom: 5px; }
+     .reportTable td {
+         border: none; border-bottom: 1px solid #eee; position: relative;
+         padding-left: 50%; text-align: right;
+     }
+     .reportTable td:before {
+         position: absolute; top: 6px; left: 6px; width: 45%; padding-right: 10px;
+         white-space: nowrap; font-weight: bold; content: attr(data-label);
+     }
+}
+.masterFilter {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
+    flex-wrap: wrap;
+    flex-grow: 1;
+    width: auto; 
+}
+.masterAnalytics {
+   margin-top: 20px;
+}
+
+.reportTable {
+   width: 100%; 
+   border-collapse: collapse; 
+   margin-top: 15px;
+   font-size: 0.9em;
+   text-align: left; 
+}
+
+.reportTable th {
+   background-color: #f2f2f2; 
+   padding: 12px 15px;
+   border: 1px solid #ddd; 
+   font-weight: bold;
+   color: #333;
+}
+
+.reportTable td {
+   padding: 12px 15px;
+   border: 1px solid #ddd; 
+   vertical-align: top; 
+}
+
+.reportTable tbody tr:nth-child(even) {
+   background-color: #f9f9f9;
+}
+
+.reportTable tbody tr:hover {
+   background-color: #e9e9e9;
+}
+.reportTable td:last-child span {
+   white-space: nowrap; 
+}
+
+@media (max-width: 768px) {
+     .parameterInputs input[type="date"],
+     .parameterInputs input[type="datetime-local"],
+     .parameterInputs select,
+     .serviceFilter select,
+     .serviceFilter,
+     .masterFilter select, 
+     .masterFilter 
+     {
+          width: 100%;
+          max-width: none;
+          margin: 0;
+     }
+
+      .serviceFilter label,
+      .masterFilter label
+      {
+          margin: 0;
+          margin-bottom: 5px;
+      }
+
+    .masterAnalytics {
+        overflow-x: auto; 
+        -webkit-overflow-scrolling: touch; 
+    }
+    .reportTable {
+        width: 600px; 
+        max-width: none; 
+    }
+}
+
+.salesAnalytics {
+    margin-top: 20px;
+}
+
+.revenueGraph {
+    margin-bottom: 20px; 
+}
+
+.revenueGraph h5 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+@media (max-width: 768px) {
+
+      .parameterInputs input[type="date"],
+      .parameterInputs input[type="datetime-local"],
+      .parameterInputs select,
+      .serviceFilter select,
+      .serviceFilter,
+      .masterFilter select,
+      .masterFilter
+      {
+           width: 100%;
+           max-width: none;
+           margin: 0;
+      }
+
+       .serviceFilter label,
+       .masterFilter label
+       {
+           margin: 0;
+           margin-bottom: 5px;
+       }
+
+     .revenueGraph {
+          overflow-x: auto; 
+          -webkit-overflow-scrolling: touch;
+     }
+     .revenueGraph > div { 
+         width: 100% !important; 
+         max-width: none !important; 
+     }
+}

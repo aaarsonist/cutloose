@@ -1,0 +1,92 @@
+.dashboard {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h2 {
+    text-align: center;
+    color: #333333;
+    font: 600 48px/1 'Mulish', sans-serif;
+    line-height: 1.2;
+}
+
+h3 {
+    text-align: center;
+    color: #333;
+    font: 600 30px/1 'Mulish', sans-serif;
+    line-height: 1.2;
+}
+
+.bookingSection, .reviewSection {
+    margin-top: 20px;
+}
+
+select, input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.button1 {
+    display: block; 
+    margin: 20px auto 0; 
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgb(221, 189, 13) 0%, rgb(222, 89, 1) 100%);
+    box-shadow: 0 0 20px rgba(254, 91, 20, 0.4);
+    cursor: pointer;
+    padding: 0 34px;
+    font: 600 16px/56px 'Mulish', sans-serif;
+    color: #fff;
+    border: none;
+}
+
+textarea {
+    height: 100px;
+    resize: none;
+}
+
+.button1:hover {
+    box-shadow: 0 0 25px rgba(254, 91, 20, 0.6);
+}
+
+.ratingInput {
+    margin-bottom: 15px;
+    align-items: center; 
+}
+
+.ratingInput label {
+    margin-right: 10px;
+    font: 600 18px/1 'Mulish', sans-serif;
+}
+
+.starRating {
+    display: inline-block; 
+}
+
+.star {
+    font-size: 24px; 
+    margin-right: 2px; 
+    cursor: pointer;
+    color: gray;
+    transition: color 0.2s ease-in-out; 
+}
+
+.star:last-child {
+    margin-right: 0; 
+}
+
+.selectedRating {
+    margin-left: 10px; 
+    font-weight: bold;
+    color: #555;
+}
+
+.star[style*="not-allowed"] {
+    cursor: not-allowed !important; 
+    opacity: 0.6;
+}

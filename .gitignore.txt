@@ -1,0 +1,30 @@
+# =============== #
+# Java / Maven    #
+# =============== #
+/target/
+*.log
+*.jar
+*.war
+
+# Файлы IDE (IntelliJ, Eclipse)
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+
+# =============== #
+# Node / React    #
+# =============== #
+/node_modules/
+/build/
+.env
+.env.local
+npm-debug.log
+yarn-error.log
+
+# =============== #
+# OS / Common     #
+# =============== #
+.DS_Store
+.vscode/
