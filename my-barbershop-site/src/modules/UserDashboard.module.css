@@ -90,3 +90,59 @@ textarea {
     cursor: not-allowed !important; 
     opacity: 0.6;
 }
+
+.upcomingAppointmentsSection {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.appointmentList {
+    list-style-type: none;
+    padding: 0;
+}
+
+.appointmentItem {
+    font-family: 'Mulish', sans-serif; /* <-- Вот твой шрифт */
+    font-size: 16px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Для мобильных */
+}
+
+.appointmentDetails {
+    text-align: left;
+    flex-grow: 1;
+}
+
+.appointmentDetails span {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.appointmentDetails span:first-child {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.cancelButton {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 15px;
+    cursor: pointer;
+    font: 600 14px/1 'Mulish', sans-serif;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: background-color 0.2s ease;
+}
+
+.cancelButton:hover {
+    background: #c0392b;
+}

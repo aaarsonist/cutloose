@@ -10,6 +10,9 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+
 @Entity
 @Getter
 @Setter
@@ -40,4 +43,8 @@ public class Timetable {
     @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Review> reviews;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BookingStatus status = BookingStatus.BOOKED;
 }

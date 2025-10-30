@@ -35,6 +35,7 @@ public class ServiceServiceImpl implements ServiceService {
         ServiceEntity existingService = serviceRepository.findById(id).orElseThrow(() -> new RuntimeException("Услуга не найдена"));
         existingService.setName(service.getName());
         existingService.setPrice(service.getPrice());
+        existingService.setDuration(service.getDuration());
         existingService.setType(service.getType());
         return serviceRepository.save(existingService);
     }

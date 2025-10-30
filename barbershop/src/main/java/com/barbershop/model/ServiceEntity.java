@@ -27,4 +27,7 @@ public class ServiceEntity {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ServiceType type;
+
+    @Column(name = "duration")
+    private Integer duration;
 }

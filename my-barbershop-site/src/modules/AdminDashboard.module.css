@@ -22,7 +22,7 @@ input {
     border-radius: 4px;
 }
 
-.addButton {
+.addServiceSection button {
     display: block; 
     margin: 20px auto 0; 
     border-radius: 15px;
@@ -35,7 +35,7 @@ input {
     border: none;
 }
 
-.addButton:hover {
+.addServiceSection button:hover {
     box-shadow: 0 0 25px rgba(254, 91, 20, 0.6);
 }
 

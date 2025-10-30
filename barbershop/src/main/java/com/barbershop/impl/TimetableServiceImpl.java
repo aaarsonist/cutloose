@@ -1,5 +1,8 @@
 package com.barbershop.impl;
 
+import com.barbershop.model.BookingStatus;
+import org.springframework.security.access.AccessDeniedException;
+
 import com.barbershop.model.Timetable;
 import com.barbershop.model.User;
 import com.barbershop.repository.TimetableRepository;
@@ -25,7 +28,7 @@ public class TimetableServiceImpl implements TimetableService {
     }
     @Override
     public List<Timetable> getAllAppointments() {
-        return timetableRepository.findAll();
+        return timetableRepository.findByStatusAndAppointmentTimeAfter(BookingStatus.BOOKED, LocalDateTime.now());
     }
     @Override
     @Transactional
@@ -34,7 +37,7 @@ public class TimetableServiceImpl implements TimetableService {
                 .orElseThrow(() -> new RuntimeException("Пользователь с ID " + userId + " не найден"));
 
         timetable.setBookedBy(user);
-
+        timetable.setStatus(BookingStatus.BOOKED);
         return timetableRepository.save(timetable);
     }
 
@@ -43,6 +46,34 @@ public class TimetableServiceImpl implements TimetableService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь с ID " + userId + " не найден"));
 
-        return timetableRepository.findByBookedByAndAppointmentTimeBefore(user, LocalDateTime.now());
+        return timetableRepository.findCompletedAppointmentsForUserWithoutReview(user);
+    }
+    @Override
+    public List<Timetable> getUpcomingAppointmentsForUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь с ID " + userId + " не найден"));
+
+        // Ищем только активные (BOOKED) записи
+        return timetableRepository.findByBookedByAndStatus(user, BookingStatus.BOOKED);
+    }
+
+    @Override
+    @Transactional
+    public void cancelAppointment(Long appointmentId, Long userId) {
+        Timetable appointment = timetableRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Запись с ID " + appointmentId + " не найдена."));
+
+        // Проверка, что пользователь удаляет СВОЮ запись
+        if (!appointment.getBookedBy().getId().equals(userId)) {
+            throw new AccessDeniedException("Вы не можете удалить чужую запись.");
+        }
+
+        // Доп. проверка: можно отменить только 'BOOKED' запись
+        if (appointment.getStatus() != BookingStatus.BOOKED) {
+            throw new RuntimeException("Нельзя отменить завершенную запись.");
+        }
+
+        // По твоему ТЗ - просто удаляем
+        timetableRepository.delete(appointment);
     }
 }

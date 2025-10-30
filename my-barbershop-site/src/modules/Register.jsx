@@ -18,7 +18,8 @@
             try {
               await api.post('/api/users/register', {
                 username: data.email,
-                password: data.password
+                password: data.password,
+                name: data.name
               });
 
               const loginFormData = new URLSearchParams();
@@ -60,6 +61,13 @@
                 <p className={styles.title}>Регистрация</p>
 
                 <form onSubmit={handleSubmit(onSubmit)}>
+                    <input 
+                        type="text" 
+                        placeholder="Введите ваше имя" 
+                        {...register("name", { required: true })} 
+                    />
+                    {errors.name && <span style={{ color: "red" }}>*Имя обязательно</span>}
+
                     <input 
                         type="email" 
                         placeholder="Введите email" 

@@ -48,7 +48,12 @@ const chartOptions = {
 
 function AdminDashboard() {
     const [services, setServices] = useState([]);
-    const [newService, setNewService] = useState({ name: '', price: '', type: '' });
+    const [newService, setNewService] = useState({
+        name: '',
+        price: '',
+        type: 'MEN',
+        duration: ''
+    });
     const [editingService, setEditingService] = useState(null);
     const [reviews, setReviews] = useState([]); 
     const [timetable, setTimetable] = useState([]);
@@ -75,19 +80,20 @@ function AdminDashboard() {
     }, []);
 
     const fetchServices = async () => {
-        try {
-            const response = await axios.get('http://localhost:8080/services');
-            setServices(response.data);
-            const serviceOptions = response.data.map(service => ({
-                value: service.id,   
-                label: service.name, 
-            }));
-            setAvailableServices(serviceOptions);
-            console.log('Список услуг загружен:', response.data);
-        } catch (error) {
-            console.error('Ошибка при загрузке услуг:', error);
-        }
-    };
+        try {
+            // --- ИСПОЛЬЗУЕМ 'api' ВМЕСТО 'axios' ---
+            const response = await api.get('/services'); // Используем api для единообразия
+            setServices(response.data);
+            const serviceOptions = response.data.map(service => ({
+                value: service.id,   
+                label: service.name, 
+            }));
+            setAvailableServices(serviceOptions);
+            console.log('Список услуг загружен:', response.data);
+        } catch (error) {
+            console.error('Ошибка при загрузке услуг:', error);
+        }
+    };
 
     const fetchReviews = async () => {
         try {
@@ -120,18 +126,46 @@ function AdminDashboard() {
         }
     };
 
+    const handleServiceFormChange = (e) => {
+        const { name, value } = e.target;
+        setNewService(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
     const handleAddService = async () => {
-        if (newService.name && newService.price && newService.type) {
-            try {
-                await axios.post('http://localhost:8080/services', newService);
-                console.log('Услуга добавлена:', newService);
-                setNewService({ name: '', price: '', type: '' });
-                fetchServices();
-            } catch (error) {
-                console.error('Ошибка при добавлении услуги:', error);
-            }
-        } else {
-            alert('Введите название, цену и тип услуги.');
+        // --- ИЗМЕНЕНО: Проверка полей из объекта newService ---
+        if (!newService.name || !newService.price || !newService.duration) {
+            alert('Пожалуйста, заполните все поля (Название, Цена, Длительность).');
+            return;
+        }
+        try {
+            // --- ИЗМЕНЕНО: Создаем объект из состояния ---
+            const serviceToAdd = {
+                name: newService.name,
+                price: parseFloat(newService.price),
+                type: newService.type,
+                duration: parseInt(newService.duration)
+            };
+
+            await api.post('/services', serviceToAdd, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            alert('Услуга успешно добавлена!');
+            
+            // --- ИЗМЕНЕНО: Сброс состояния ---
+            setNewService({
+                name: '',
+                price: '',
+                type: 'MEN',
+                duration: ''
+            });
+            
+            fetchServices(); // Обновить список услуг (предполагая, что fetchServices существует)
+        } catch (error) {
+            console.error('Ошибка при добавлении услуги:', error);
+            alert('Не удалось добавить услугу.');
         }
     };
 
@@ -140,25 +174,36 @@ function AdminDashboard() {
     };
 
     const handleSaveEdit = async () => {
-        try {
-            await axios.put(`http://localhost:8080/services/${editingService.id}`, editingService);
-            console.log('Услуга обновлена:', editingService);
-            fetchServices();
-            setEditingService(null);
-        } catch (error) {
-            console.error('Ошибка при обновлении услуги:', error);
-        }
-    };
+        try {
+            // Преобразуем данные в числа
+            const serviceToSave = {
+                ...editingService,
+                price: parseFloat(editingService.price),
+                duration: parseInt(editingService.duration)
+            };
 
-    const handleDeleteService = async (id) => {
-        try {
-            await axios.delete(`http://localhost:8080/services/${id}`);
-            console.log(`Услуга с ID ${id} удалена`);
-            fetchServices();
-        } catch (error) {
-            console.error('Ошибка при удалении услуги:', error);
-        }
-    };
+            // --- ИСПРАВЛЕНИЕ: Используем 'api.put' вместо 'axios.put' ---
+            await api.put(`/services/${editingService.id}`, serviceToSave);
+            
+            console.log('Услуга обновлена:', serviceToSave);
+            fetchServices();
+            setEditingService(null);
+        } catch (error) {
+            console.error('Ошибка при обновлении услуги:', error);
+        }
+    };
+
+    const handleDeleteService = async (id) => {
+        try {
+            // --- ИСПРАВЛЕНИЕ: Используем 'api.delete' вместо 'axios.delete' ---
+            await api.delete(`/services/${id}`);
+            
+            console.log(`Услуга с ID ${id} удалена`);
+            fetchServices();
+        } catch (error) {
+            console.error('Ошибка при удалении услуги:', error);
+        }
+    };
 
     const formatAppointmentTime = (isoString) => {
         if (!isoString) return 'Неизвестное время';
@@ -464,30 +509,40 @@ function AdminDashboard() {
             </div>
             <div className={styles.addServiceSection}>
                 <h3>Добавить новую услугу</h3>
-                <input
-                    type="text"
-                    placeholder="Название услуги"
-                    value={newService.name}
-                    onChange={(e) => setNewService({ ...newService, name: e.target.value })}
-                />
-                <input
-                    type="text"
-                    placeholder="Цена услуги"
-                    value={newService.price}
-                    onChange={(e) => setNewService({ ...newService, price: e.target.value })}
-                />
-                <select
-                    required
-                    value={newService.type}
-                    onChange={(e) => setNewService({ ...newService, type: e.target.value })}
-                >
-                    <option value="">Выберите тип услуги</option>
-                    <option value="MEN">Мужская</option>
-                    <option value="WOMEN">Женская</option>
-                </select>
-                <button className={styles.addButton} onClick={handleAddService}>
-                    Добавить услугу
-                </button>
+                <div className={styles.serviceForm}>
+                    <input
+                        type="text"
+                        placeholder="Название услуги"
+                        name="name" // Добавлен name
+                        value={newService.name}
+                        onChange={handleServiceFormChange} // Обновлен onChange
+                    />
+                    <input
+                        type="number"
+                        placeholder="Цена (руб.)"
+                        name="price" // Добавлен name
+                        value={newService.price}
+                        onChange={handleServiceFormChange} // Обновлен onChange
+                    />
+                    
+                    <input
+                        type="number"
+                        placeholder="Длительность (в мин.)"
+                        name="duration" // Добавлен name
+                        value={newService.duration}
+                        onChange={handleServiceFormChange} // Обновлен onChange
+                    />
+
+                    <select 
+                        name="type" // Добавлен name
+                        value={newService.type} 
+                        onChange={handleServiceFormChange} // Обновлен onChange
+                    >
+                        <option value="MEN">Мужская</option>
+                        <option value="WOMEN">Женская</option>
+                    </select>
+                    <button onClick={handleAddService}>Добавить услугу</button>
+                </div>
             </div>
 
             <div className={styles.serviceListSection}>
@@ -503,10 +558,16 @@ function AdminDashboard() {
                                         onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
                                     />
                                     <input
-                                        type="text"
+                                        type="number"
                                         value={editingService.price}
                                         onChange={(e) => setEditingService({ ...editingService, price: e.target.value })}
                                     />
+                                    <input
+                                        type="number"
+                                        placeholder="Длит. (мин)"
+                                        value={editingService.duration || ''}
+                                        onChange={(e) => setEditingService({ ...editingService, duration: e.target.value })}
+                                    />
                                     <select
                                         value={editingService.type}
                                         onChange={(e) => setEditingService({ ...editingService, type: e.target.value })}
@@ -518,7 +579,7 @@ function AdminDashboard() {
                                 </div>
                             ) : (
                                 <div>
-                                    <span>{service.name} - {service.price} р. ({service.type === 'MEN' ? 'Мужская' : 'Женская'})</span>
+                                    <span>{service.name} - {service.price} р. ({service.type === 'MEN' ? 'Мужская' : 'Женская'}) - {service.duration || 'N/A'} мин.</span>
                                     <button onClick={() => handleEditService(service)}>Редактировать</button>
                                     <button onClick={() => handleDeleteService(service.id)}>Удалить</button>
                                 </div>

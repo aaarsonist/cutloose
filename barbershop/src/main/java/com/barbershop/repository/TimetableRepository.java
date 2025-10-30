@@ -1,5 +1,6 @@
 package com.barbershop.repository;
 
+import com.barbershop.model.BookingStatus;
 import com.barbershop.model.Timetable;
 import com.barbershop.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,13 +14,6 @@ import java.util.List;
 import java.time.LocalDate;
 @Repository
 public interface TimetableRepository extends JpaRepository<Timetable, Long> {
-    @EntityGraph(attributePaths = {"service", "master", "bookedBy"})
-    @Query("SELECT t FROM Timetable t JOIN t.service s WHERE (:startDate IS NULL OR t.appointmentTime >= :startDate) AND (:endDate IS NULL OR t.appointmentTime <= :endDate) AND (:serviceIds IS NULL OR s.id IN :serviceIds) ORDER BY t.appointmentTime ASC")
-    List<Timetable> findAppointmentsWithinPeriodAndServices(
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate,
-            @Param("serviceIds") List<Long> serviceIds
-    );
 
     @Query("SELECT DATE(t.appointmentTime), s.name, COUNT(t) FROM Timetable t JOIN t.service s WHERE (:startDate IS NULL OR t.appointmentTime >= :startDate) AND (:endDate IS NULL OR t.appointmentTime <= :endDate) AND (:serviceIds IS NULL OR s.id IN :serviceIds) GROUP BY DATE(t.appointmentTime), s.name ORDER BY DATE(t.appointmentTime) ASC, s.name ASC")
     List<Object[]> countVisitsByDayAndService(
@@ -53,4 +47,34 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
             @Param("masterIds") List<Long> masterIds
     );
     List<Timetable> findByBookedByAndAppointmentTimeBefore(User user, LocalDateTime currentTime);
+
+    List<Timetable> findByBookedByAndStatus(User user, BookingStatus status);
+
+    /**
+     * Находит все записи пользователя со статусом COMPLETED, на которые ЕЩЕ НЕТ ОТЗЫВА.
+     * (Это то, на что пользователь может оставить отзыв)
+     */
+    @Query("SELECT t FROM Timetable t LEFT JOIN t.reviews r " +
+            "WHERE t.bookedBy = :user " +
+            "AND t.status = com.barbershop.model.BookingStatus.COMPLETED " +
+            "AND r.id IS NULL")
+    List<Timetable> findCompletedAppointmentsForUserWithoutReview(@Param("user") User user);
+
+    // ---
+
+    // --- ДОБАВИТЬ МЕТОДЫ ДЛЯ ПЛАНИРОВЩИКА И АДМИНА ---
+
+    /**
+     * (Для Планировщика) Находит все записи BOOKED, которые уже начались.
+     * Мы добавили @EntityGraph, чтобы сразу загрузить 'service' и получить 'duration'.
+     */
+    @EntityGraph(attributePaths = {"service"})
+    List<Timetable> findByStatusAndAppointmentTimeBefore(BookingStatus status, LocalDateTime time);
+
+    /**
+     * (Для Админа) Находит все записи BOOKED, которые еще не наступили.
+     */
+    @EntityGraph(attributePaths = {"service", "master", "bookedBy"})
+    List<Timetable> findByStatusAndAppointmentTimeAfter(BookingStatus status, LocalDateTime time);
+
 }

@@ -16,10 +16,20 @@ function UserDashboard() {
   const [completedAppointments, setCompletedAppointments] = useState([]);
   const [selectedAppointmentIdForReview, setSelectedAppointmentIdForReview] = useState('');
 
+  const [userName, setUserName] = useState('');
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+
   useEffect(() => {
     fetchServices();
     fetchMasters();
     fetchCompletedAppointments();
+    fetchUpcomingAppointments();
+
+    const userString = localStorage.getItem('currentUser');
+    if (userString) {
+        const user = JSON.parse(userString);
+        setUserName(user.name || user.username);
+    }
   }, []);
 
   const fetchServices = async () => {
@@ -44,20 +54,26 @@ function UserDashboard() {
 
   const fetchCompletedAppointments = async () => {
     try {
+        // Теперь этот эндпоинт отдает только COMPLETED без отзывов
         const response = await api.get('/api/timetable/user/completed');
-        const now = new Date();
-        const completed = response.data.filter(appointment =>
-            new Date(appointment.appointmentTime) < now
-
-        );
-
-        setCompletedAppointments(completed);
-        console.log('Прошедшие записи пользователя загружены и отфильтрованы:', completed);
-
+        setCompletedAppointments(response.data);
+        console.log('Прошедшие записи для отзыва загружены:', response.data);
     } catch (error) {
         console.error('Ошибка при загрузке прошедших записей:', error);
     }
 };
+
+  const fetchUpcomingAppointments = async () => {
+    try {
+        const response = await api.get('/api/timetable/user/upcoming');
+        // Сортируем от ближайшей к дальнейшей
+        const sorted = response.data.sort((a, b) => new Date(a.appointmentTime) - new Date(b.appointmentTime));
+        setUpcomingAppointments(sorted);
+        console.log('Предстоящие записи загружены:', sorted);
+    } catch (error) {
+        console.error('Ошибка при загрузке предстоящих записей:', error);
+    }
+  };
 
   const handleBooking = () => {
     if (!selectedService || !appointmentTime|| !selectedMaster) {
@@ -81,6 +97,7 @@ function UserDashboard() {
         setSelectedMaster(''); 
         setAppointmentTime('');
         fetchCompletedAppointments();
+        fetchUpcomingAppointments();
       })
       .catch(error => {
         console.error("Ошибка при бронировании:", error);
@@ -124,6 +141,24 @@ function UserDashboard() {
     }
   };
 
+  const handleCancelAppointment = async (appointmentId) => {
+    // Твое требование: "система должна спрашивать точно ли мы хотим отменить"
+    if (!window.confirm("Вы уверены, что хотите отменить эту запись?")) {
+        return;
+    }
+
+    try {
+        // Используем DELETE и правильный URL
+        await api.delete(`/api/timetable/${appointmentId}`);
+        alert("Запись успешно отменена!");
+        // Обновляем список
+        fetchUpcomingAppointments();
+    } catch (error) {
+        console.error("Ошибка при отмене записи:", error);
+        alert("Не удалось отменить запись. Возможно, она уже прошла.");
+    }
+  };
+
     const formatAppointmentTime = (isoString) => {
         if (!isoString) return 'Неизвестное время';
         try {
@@ -147,10 +182,10 @@ function UserDashboard() {
 
   return (
     <div className={styles.dashboard}>
-      <h2>Личный кабинет</h2>
-      <h3>Запись на услугу:</h3>
+      <h2>{userName ? `${userName}. ` : ''}Личный кабинет</h2>
+      <h3>Запись на услугу</h3>
       <div className={styles.bookingSection}>
-        <h3>Выбор услуги</h3>
+
         <select 
           value={selectedService}
           onChange={(e) => setSelectedService(e.target.value)}
@@ -168,7 +203,6 @@ function UserDashboard() {
           )}
         </select>
         
-        <h3>Выбор мастера</h3>
         <select
           value={selectedMaster}
           onChange={(e) => setSelectedMaster(e.target.value)}
@@ -186,7 +220,6 @@ function UserDashboard() {
           )}
         </select>
 
-        <h3>Выбор времени</h3>
         <input 
           type="datetime-local" 
           value={appointmentTime} 
@@ -196,6 +229,35 @@ function UserDashboard() {
         />
 
         <button className={styles.button1} onClick={handleBooking}>Забронировать</button>
+      </div>
+      
+      <div className={styles.upcomingAppointmentsSection}>
+        <h3>Ваши предстоящие записи</h3>
+        {upcomingAppointments.length > 0 ? (
+            <ul className={styles.appointmentList}>
+                {upcomingAppointments.map((appointment) => (
+                    <li key={appointment.id} className={styles.appointmentItem}>
+                        <div className={styles.appointmentDetails}>
+                            <span>
+                                {appointment.service?.name || 'Услуга'}
+                                {' у '}
+                                {appointment.master?.name || 'Мастер'}
+                            </span>
+                            <span>
+                                {formatAppointmentTime(appointment.appointmentTime)}
+                            </span>
+                        </div>
+                        <button 
+                            className={styles.cancelButton} 
+                            onClick={() => handleCancelAppointment(appointment.id)}>
+                            Отменить
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        ) : (
+            <p>У вас нет предстоящих записей.</p>
+        )}
       </div>
 
       <div className={styles.reviewSection}>
