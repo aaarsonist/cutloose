@@ -6,7 +6,6 @@ import styles from './UserDashboard.module.css';
 function UserDashboard() {
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState('');
-  const [appointmentTime, setAppointmentTime] = useState('');
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(0); 
   const [hoverRating, setHoverRating] = useState(0);
@@ -18,6 +17,11 @@ function UserDashboard() {
 
   const [userName, setUserName] = useState('');
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+
+  const [selectedDate, setSelectedDate] = useState(''); // Только дата
+  const [availableSlots, setAvailableSlots] = useState([]); // Массив слотов [ "09:00", "09:15" ]
+  const [selectedSlot, setSelectedSlot] = useState(''); // Выбранный слот
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   useEffect(() => {
     fetchServices();
@@ -31,6 +35,16 @@ function UserDashboard() {
         setUserName(user.name || user.username);
     }
   }, []);
+
+  useEffect(() => {
+    if (selectedService && selectedMaster && selectedDate) {
+      fetchAvailableSlots();
+    }
+    // Сбрасываем слоты, если что-то меняется
+    setAvailableSlots([]);
+    setSelectedSlot('');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedService, selectedMaster, selectedDate]);
 
   const fetchServices = async () => {
     try {
@@ -49,6 +63,26 @@ function UserDashboard() {
       console.log('Список мастеров загружен:', response.data);
     } catch (error) {
       console.error('Ошибка при загрузке мастеров:', error);
+    }
+  };
+
+  const fetchAvailableSlots = async () => {
+    setIsLoadingSlots(true);
+    try {
+      const response = await api.get(`/api/masters/${selectedMaster}/availability`, {
+        params: {
+          serviceId: selectedService,
+          date: selectedDate // yyyy-MM-dd
+        }
+      });
+      setAvailableSlots(response.data);
+      console.log("Слоты загружены:", response.data);
+    } catch (error) {
+      console.error('Ошибка при загрузке слотов:', error);
+      alert("Не удалось загрузить доступные слоты.");
+      setAvailableSlots([]);
+    } finally {
+      setIsLoadingSlots(false);
     }
   };
 
@@ -76,34 +110,41 @@ function UserDashboard() {
   };
 
   const handleBooking = () => {
-    if (!selectedService || !appointmentTime|| !selectedMaster) {
-      alert("Выберите услугу, время и мастера!");
+    // Проверяем новые states
+    if (!selectedService || !selectedMaster || !selectedDate || !selectedSlot) {
+      alert("Выберите услугу, мастера, дату и свободное время!");
       return;
     }
+    const localDateTime = new Date(`${selectedDate}T${selectedSlot}`);
+    localDateTime.setHours(localDateTime.getHours() + 6);
+    const finalAppointmentTime = localDateTime.toISOString();
 
-  const date = new Date(appointmentTime);
-  date.setHours(date.getHours() + 6); 
-
-  const appointmentData = {
-    service: { id: selectedService },
-    master: { id: selectedMaster },
-    appointmentTime: date.toISOString(), 
-  };
+    const appointmentData = {
+      service: { id: selectedService },
+      master: { id: selectedMaster },
+      appointmentTime: finalAppointmentTime, 
+    };
 
     api.post('/api/timetable', appointmentData)
       .then(() => {
         alert("Вы успешно забронировали услугу!");
+        // Сбрасываем все
         setSelectedService('');
         setSelectedMaster(''); 
-        setAppointmentTime('');
-        fetchCompletedAppointments();
+        setSelectedDate('');
+        setSelectedSlot('');
+        setAvailableSlots([]);
+        // Обновляем списки
         fetchUpcomingAppointments();
+        fetchCompletedAppointments();
       })
       .catch(error => {
         console.error("Ошибка при бронировании:", error);
-        alert("Ошибка при бронировании. Пожалуйста, попробуйте еще раз.");
+        alert("Ошибка при бронировании. Возможно, этот слот только что заняли. Пожалуйста, обновите слоты.");
+        fetchAvailableSlots(); // Обновляем слоты, если была ошибка
       });
   };
+
   const handleReviewSubmit = async () => {
     if (!selectedAppointmentIdForReview  || rating < 1) { 
       alert("Выберите запись, на которую хотите оставить отзыв, введите текст отзыва и выберите оценку (нажмите на звезду)! ");
@@ -183,32 +224,35 @@ function UserDashboard() {
   return (
     <div className={styles.dashboard}>
       <h2>{userName ? `${userName}. ` : ''}Личный кабинет</h2>
-      <h3>Запись на услугу</h3>
+      <h3>Запись на услугу:</h3>
       <div className={styles.bookingSection}>
-
+        
+        {/* Шаг 1: Выбор Услуги */}
         <select 
           value={selectedService}
           onChange={(e) => setSelectedService(e.target.value)}
           required
         >
-          <option value="" disabled>Выберите услугу</option>
+          <option value="" disabled>1. Выберите услугу</option>
           {services.length > 0 ? (
             services.map((service) => (
               <option key={service.id} value={service.id}>
-                 {service.name} - {service.price} руб. ({service.type === 'MEN' ? 'Мужская' : 'Женская'})
+                {service.name} - {service.price} руб. ({service.type === 'MEN' ? 'Мужская' : 'Женская'})
               </option>
             ))
           ) : (
-            <option disabled>Список услуг пуст</option>
+            <option disabled>Загрузка услуг...</option>
           )}
         </select>
         
+        {/* Шаг 2: Выбор Мастера */}
         <select
           value={selectedMaster}
           onChange={(e) => setSelectedMaster(e.target.value)}
           required
+          disabled={!selectedService} // Неактивно, пока не выбрана услуга
         >
-          <option value="" disabled>Выберите мастера</option>
+          <option value="" disabled>2. Выберите мастера</option>
           {masters.length > 0 ? (
             masters.map((master) => (
               <option key={master.id} value={master.id}>
@@ -216,21 +260,47 @@ function UserDashboard() {
               </option>
             ))
           ) : (
-            <option disabled>Список мастеров пуст</option>
+            <option disabled>Загрузка мастеров...</option>
           )}
         </select>
 
+        {/* Шаг 3: Выбор Даты */}
         <input 
-          type="datetime-local" 
-          value={appointmentTime} 
-          // Атрибут min, чтобы разрешить выбор прошлых дат/времени
-          min={new Date().toISOString().slice(0, 16)}
-          onChange={(e) => setAppointmentTime(e.target.value)} 
+          type="date" 
+          value={selectedDate} 
+          min={new Date().toISOString().split('T')[0]} // Нельзя выбрать прошлую дату
+          onChange={(e) => setSelectedDate(e.target.value)} 
+          disabled={!selectedMaster} // Неактивно, пока не выбран мастер
         />
 
-        <button className={styles.button1} onClick={handleBooking}>Забронировать</button>
+        {/* Шаг 4: Выбор Слота */}
+        <div className={styles.slotsContainer}>
+          {isLoadingSlots && <p>Загрузка свободных слотов...</p>}
+          {!isLoadingSlots && availableSlots.length > 0 && (
+            availableSlots.map(slot => (
+              <button 
+                key={slot} 
+                className={`${styles.slotButton} ${selectedSlot === slot ? styles.selectedSlot : ''}`}
+                onClick={() => setSelectedSlot(slot)}
+              >
+                {slot.substring(0, 5)} {/* Отображаем HH:mm */}
+              </button>
+            ))
+          )}
+          {!isLoadingSlots && availableSlots.length === 0 && selectedDate && (
+            <p>На выбранную дату свободных слотов нет</p>
+          )}
+        </div>
+
+        <button 
+          className={styles.button1} 
+          onClick={handleBooking}
+          disabled={!selectedSlot} // Кнопка неактивна, пока не выбран слот
+        >
+          Забронировать
+        </button>
       </div>
-      
+
       <div className={styles.upcomingAppointmentsSection}>
         <h3>Ваши предстоящие записи</h3>
         {upcomingAppointments.length > 0 ? (

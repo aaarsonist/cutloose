@@ -64,21 +64,18 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
             "AND t.status = com.barbershop.model.BookingStatus.COMPLETED")
     List<Timetable> findCompletedAppointmentsForUserWithoutReview(@Param("user") User user);
 
-    // ---
-
-    // --- ДОБАВИТЬ МЕТОДЫ ДЛЯ ПЛАНИРОВЩИКА И АДМИНА ---
-
-    /**
-     * (Для Планировщика) Находит все записи BOOKED, которые уже начались.
-     * Мы добавили @EntityGraph, чтобы сразу загрузить 'service' и получить 'duration'.
-     */
     @EntityGraph(attributePaths = {"service"})
     List<Timetable> findByStatusAndAppointmentTimeBefore(BookingStatus status, LocalDateTime time);
 
-    /**
-     * (Для Админа) Находит все записи BOOKED, которые еще не наступили.
-     */
     @EntityGraph(attributePaths = {"service", "master", "bookedBy"})
     List<Timetable> findByStatusAndAppointmentTimeAfter(BookingStatus status, LocalDateTime time);
 
+    /**
+     * Находит все записи (любой статус) для мастера в указанный день.
+     * Используется для расчета свободных слотов.
+     */
+    @Query("SELECT t FROM Timetable t " +
+            "WHERE t.master.id = :masterId " +
+            "AND FUNCTION('DATE', t.appointmentTime) = :date")
+    List<Timetable> findAllByMasterIdAndDate(@Param("masterId") Long masterId, @Param("date") LocalDate date);
 }

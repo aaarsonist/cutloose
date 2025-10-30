@@ -146,3 +146,41 @@ textarea {
 .cancelButton:hover {
     background: #c0392b;
 }
+
+.slotsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fdfdfd;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.slotButton {
+  font-family: 'Mulish', sans-serif;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  font-size: 14px;
+}
+
+.slotButton:hover {
+  background-color: #e0e0e0;
+  border-color: #bbb;
+}
+
+/* Стиль для ВЫБРАННОГО слота */
+.slotButton.selectedSlot {
+  background-color: rgb(222, 89, 1); /* Твой фирменный цвет */
+  color: white;
+  border-color: rgb(222, 89, 1);
+  font-weight: bold;
+}

@@ -527,7 +527,7 @@ function AdminDashboard() {
                     
                     <input
                         type="number"
-                        placeholder="Длительность (в мин.)"
+                        placeholder="Длительность (мин.)"
                         name="duration" // Добавлен name
                         value={newService.duration}
                         onChange={handleServiceFormChange} // Обновлен onChange
