@@ -14,14 +14,26 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    @Query("SELECT r.appointment.service.id, r.appointment.service.name, AVG(r.rating) FROM Review r WHERE r.appointment IS NOT NULL AND (:startDate IS NULL OR r.appointment.appointmentTime >= :startDate) AND (:endDate IS NULL OR r.appointment.appointmentTime <= :endDate) AND (:serviceIds IS NULL OR r.appointment.service.id IN :serviceIds) GROUP BY r.appointment.service.id, r.appointment.service.name")
+    @Query("SELECT r.appointment.service.id, r.appointment.service.name, AVG(r.rating) FROM Review r " +
+            "WHERE r.appointment IS NOT NULL " +
+            "AND r.appointment.status = com.barbershop.model.BookingStatus.COMPLETED " +
+            "AND (:startDate IS NULL OR r.appointment.appointmentTime >= :startDate) " +
+            "AND (:endDate IS NULL OR r.appointment.appointmentTime <= :endDate) " +
+            "AND (:serviceIds IS NULL OR r.appointment.service.id IN :serviceIds) " +
+            "GROUP BY r.appointment.service.id, r.appointment.service.name")
     List<Object[]> findAverageRatingByServiceWithinPeriod(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("serviceIds") List<Long> serviceIds
     );
 
-    @Query("SELECT r.appointment.master.id, m.name, AVG(r.rating) FROM Review r JOIN r.appointment a JOIN a.master m WHERE a IS NOT NULL AND m IS NOT NULL AND (:startDate IS NULL OR a.appointmentTime >= :startDate) AND (:endDate IS NULL OR a.appointmentTime <= :endDate) AND (:masterIds IS NULL OR m.id IN :masterIds) GROUP BY r.appointment.master.id, m.name")
+    @Query("SELECT r.appointment.master.id, m.name, AVG(r.rating) FROM Review r JOIN r.appointment a JOIN a.master m " +
+            "WHERE a IS NOT NULL AND m IS NOT NULL " +
+            "AND a.status = com.barbershop.model.BookingStatus.COMPLETED " +
+            "AND (:startDate IS NULL OR a.appointmentTime >= :startDate) " +
+            "AND (:endDate IS NULL OR a.appointmentTime <= :endDate) " +
+            "AND (:masterIds IS NULL OR m.id IN :masterIds) " +
+            "GROUP BY r.appointment.master.id, m.name")
     List<Object[]> findAverageRatingByMasterWithinPeriod(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
