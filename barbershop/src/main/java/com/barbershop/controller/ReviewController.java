@@ -5,6 +5,7 @@ import com.barbershop.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 // ДОБАВИТЬ ИМПОРТ Authentication ЕСЛИ НУЖНО ДЛЯ ПОЛУЧЕНИЯ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ (уже добавлено в Impl)
@@ -17,9 +18,6 @@ import java.util.List;
 public class ReviewController {
 
     private final ReviewService reviewService;
-
-    // @Autowired
-    // private UserService userService;
     @Autowired
     public ReviewController(ReviewService reviewService) {
         this.reviewService = reviewService;
@@ -47,5 +45,11 @@ public class ReviewController {
             System.err.println("Error adding review: " + e.getMessage());
             return ResponseEntity.badRequest().body(null);
         }
+    }
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')") // Только админ может удалять
+    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
+        reviewService.deleteReview(id);
+        return ResponseEntity.ok().build();
     }
 }

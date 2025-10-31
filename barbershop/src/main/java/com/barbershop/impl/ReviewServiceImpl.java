@@ -60,4 +60,9 @@ public class ReviewServiceImpl implements ReviewService {
 
         return reviewRepository.save(newReview);
     }
+    @Override
+    @Transactional
+    public void deleteReview(Long id) {
+        reviewRepository.deleteById(id);
+    }
 }

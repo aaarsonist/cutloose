@@ -8,13 +8,9 @@ function AdminManagement() {
     const [masters, setMasters] = useState([]);
     const [reviews, setReviews] = useState([]); 
     const [editingService, setEditingService] = useState(null);
-    
-    // Состояние для формы "Добавить услугу"
     const [newService, setNewService] = useState({
         name: '', price: '', type: 'MEN', duration: ''
     });
-    
-    // НОВОЕ: Состояние для формы "Добавить мастера"
     const [newMasterName, setNewMasterName] = useState('');
 
     useEffect(() => {
@@ -23,7 +19,7 @@ function AdminManagement() {
         fetchMasters(); 
     }, []);
 
-    // --- ЛОГИКА УСЛУГ (включая добавление) ---
+    // --- ЛОГИКА УСЛУГ ---
     const fetchServices = async () => { /* ... (без изменений) ... */ 
         try {
             const response = await api.get('/services'); 
@@ -32,7 +28,7 @@ function AdminManagement() {
             console.error('Ошибка при загрузке услуг:', error);
         }
     };
-    const handleServiceFormChange = (e) => {
+    const handleServiceFormChange = (e) => { /* ... (без изменений) ... */ 
         const { name, value } = e.target;
         setNewService(prevState => ({ ...prevState, [name]: value }));
     };
@@ -86,7 +82,7 @@ function AdminManagement() {
         }
     };
 
-    // --- ЛОГИКА МАСТЕРОВ (включая добавление) ---
+    // --- ЛОГИКА МАСТЕРОВ ---
     const fetchMasters = async () => { /* ... (без изменений) ... */ 
         try {
             const response = await api.get('/api/masters'); 
@@ -106,8 +102,7 @@ function AdminManagement() {
             }
         }
     };
-    // НОВАЯ ЛОГИКА: Добавление мастера
-    const handleAddMaster = async () => {
+    const handleAddMaster = async () => { /* ... (без изменений) ... */ 
         if (!newMasterName.trim()) {
             alert('Пожалуйста, введите имя мастера.');
             return;
@@ -116,15 +111,15 @@ function AdminManagement() {
             const masterToAdd = { name: newMasterName };
             await api.post('/api/masters', masterToAdd);
             alert('Мастер успешно добавлен!');
-            setNewMasterName(''); // Очищаем поле
-            fetchMasters(); // Обновляем список
+            setNewMasterName(''); 
+            fetchMasters(); 
         } catch (error) {
             console.error('Ошибка при добавлении мастера:', error);
             alert('Не удалось добавить мастера.');
         }
     };
 
-    // --- ЛОГИКА ОТЗЫВОВ (без изменений) ---
+    // --- ЛОГИКА ОТЗЫВОВ (с добавлением удаления) ---
     const fetchReviews = async () => { /* ... (без изменений) ... */ 
         try {
             const response = await api.get('/api/reviews');
@@ -141,11 +136,58 @@ function AdminManagement() {
         const emptyStar = '☆';
         return fullStar.repeat(rating) + emptyStar.repeat(5 - rating);
     };
+    
+    // НОВАЯ ЛОГИКА: Удаление отзыва
+    const handleDeleteReview = async (id) => {
+        if (window.confirm('Вы уверены, что хотите удалить этот отзыв?')) {
+            try {
+                await api.delete(`/api/reviews/${id}`);
+                fetchReviews(); // Обновляем список отзывов
+            } catch (error) {
+                console.error('Ошибка при удалении отзыва:', error);
+                alert('Не удалось удалить отзыв.');
+            }
+        }
+    };
 
 
-    // --- JSX (С НОВЫМИ ФОРМАМИ ВНУТРИ СЕТКИ) ---
+    // --- JSX (С ПЕРЕСТАНОВКОЙ) ---
     return (
         <div className={styles.dashboard}> 
+            <div className={styles.managementWidget} style={{marginBottom: '30px'}}> {/* Добавляем отступ снизу */}
+                <h3>Отзывы клиентов</h3>
+                <ul className={styles.managementList}>
+                    {reviews.map((review) => (
+                         <li key={review.id} className={styles.managementItem}>
+                             <span className={styles.itemInfo}>
+                                {review.appointment ? (
+                                    <>
+                                        <strong>{review.appointment.service?.name || 'Услуга'}</strong> ({renderStars(review.rating)})
+                                        <br/>
+                                        <small style={{color: '#555', fontStyle: 'italic'}}>"{review.reviewText}"</small>
+                                        <br/>
+                                        <small>Мастер: {review.appointment.master?.name || 'Неизвестно'}</small>
+                                    </>
+                                ) : (
+                                    <>
+                                        <strong>Отзыв без привязки</strong> ({renderStars(review.rating)})
+                                        <br/>
+                                        <small style={{color: '#555', fontStyle: 'italic'}}>"{review.reviewText}"</small>
+                                    </>
+                                )}
+                             </span>
+                             <div className={styles.itemButtons}>
+                                <button onClick={() => handleDeleteReview(review.id)} className={styles.deleteButton}>
+                                    Удалить
+                                </button>
+                             </div>
+                         </li>
+                    ))}
+                     {reviews.length === 0 && <li className={styles.managementItem}>Список отзывов пуст.</li>} 
+                </ul>
+            </div>
+
+            {/* СЕТКА 1x2 ДЛЯ СПИСКОВ И ФОРМ (без изменений) */}
             <div className={styles.managementGrid}>
                 
                 {/* --- КОЛОНКА 1: УСЛУГИ --- */}
@@ -184,7 +226,7 @@ function AdminManagement() {
                     
                     {/* --- Форма ДОБАВЛЕНИЯ УСЛУГИ (внутри виджета) --- */}
                     <h3 className={styles.formToggle}>Добавить услугу</h3>
-                    <div className={styles.editForm}> {/* Используем тот же стиль .editForm */}
+                    <div className={styles.editForm}>
                         <input type="text" placeholder="Название услуги" name="name" value={newService.name} onChange={handleServiceFormChange} />
                         <input type="number" placeholder="Цена (руб.)" name="price" value={newService.price} onChange={handleServiceFormChange} />
                         <input type="number" placeholder="Длительность (мин.)" name="duration" value={newService.duration} onChange={handleServiceFormChange} />
@@ -212,9 +254,9 @@ function AdminManagement() {
                         ))}
                     </ul>
                     
-                    {/* --- НОВАЯ Форма ДОБАВЛЕНИЯ МАСТЕРА (внутри виджета) --- */}
+                    {/* --- Форма ДОБАВЛЕНИЯ МАСТЕРА (внутри виджета) --- */}
                     <h3 className={styles.formToggle}>Добавить мастера</h3>
-                    <div className={styles.editForm}> {/* Используем тот же стиль .editForm */}
+                    <div className={styles.editForm}>
                         <input 
                             type="text" 
                             placeholder="Имя мастера" 
@@ -224,24 +266,6 @@ function AdminManagement() {
                         <button onClick={handleAddMaster}>Добавить мастера</button>
                     </div>
                 </div>
-            </div>
-
-            {/* --- СЕКЦИЯ ОТЗЫВОВ (внизу) --- */}
-            <div className={styles.managementWidget}> {/* Используем тот же стиль виджета */}
-                <h3>Отзывы клиентов</h3>
-                <ul className={styles.managementList}> {/* Используем тот же стиль списка */}
-                    {reviews.map((review) => (
-                         <li key={review.id} className={styles.managementItem}> {/* Используем тот же стиль строки */}
-                             <span className={styles.itemInfo}>
-                                 {review.appointment?.service?.name || 'Услуга не найдена'} ({renderStars(review.rating)})
-                                 <br/>
-                                 <small style={{color: '#555'}}>{review.reviewText}</small>
-                             </span>
-                             {/* Можно добавить кнопку удаления отзыва сюда */}
-                         </li>
-                    ))}
-                     {reviews.length === 0 && <li className={styles.managementItem}>Список отзывов пуст.</li>} 
-                </ul>
             </div>
         </div>
     );
