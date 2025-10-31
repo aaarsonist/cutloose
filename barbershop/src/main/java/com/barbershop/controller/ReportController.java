@@ -1,6 +1,9 @@
 package com.barbershop.controller;
 
 import com.barbershop.dto.report.PerformanceReportDto;
+import com.barbershop.dto.report.MasterReportDataDto;
+import com.barbershop.dto.report.SalesReportDataDto;
+import com.barbershop.dto.report.ServiceReportDataDto;
 import com.barbershop.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 @RestController
 @RequestMapping("/api/reports")
+@PreAuthorize("hasRole('ADMIN')")
 public class ReportController {
 
     private final ReportService reportService;
@@ -22,42 +26,54 @@ public class ReportController {
         this.reportService = reportService;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/performance")
-    public ResponseEntity<PerformanceReportDto> getPerformanceReport(
-            @RequestParam String reportType,
+    private LocalDateTime parseDate(Optional<LocalDateTime> date) {
+        return date.orElse(null);
+    }
+
+    // Вспомогательный метод для обработки Optional
+    private List<Long> parseIds(Optional<List<Long>> ids) {
+        return ids.orElse(null);
+    }
+    @GetMapping("/sales")
+    public ResponseEntity<SalesReportDataDto> getSalesData(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> endDate,
             @RequestParam Optional<List<Long>> serviceIds,
             @RequestParam Optional<List<Long>> masterIds
     ) {
-        System.out.println(">>> ReportController received reportType: " + reportType);
-        System.out.println(">>> ReportController received startDate: " + startDate);
-        System.out.println(">>> ReportController received endDate: " + endDate);
-        System.out.println(">>> ReportController received serviceIds: " + serviceIds);
-        System.out.println(">>> ReportController received masterIds: " + masterIds);
+        SalesReportDataDto data = reportService.getSalesData(
+                parseDate(startDate), parseDate(endDate), parseIds(serviceIds), parseIds(masterIds)
+        );
+        return ResponseEntity.ok(data);
+    }
 
-        if (!"services".equals(reportType) && !"masters".equals(reportType) && !"sales".equals(reportType)) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        try {
-            PerformanceReportDto report = reportService.getPerformanceReport(
-                    startDate.orElse(null),
-                    endDate.orElse(null),
-                    reportType,
-                    serviceIds.orElse(null),
-                    masterIds.orElse(null)
-            );
+    /**
+     * Эндпоинт для ГРАФИКА ПОСЕЩЕНИЙ и ТАБЛИЦЫ ОЦЕНОК
+     */
+    @GetMapping("/services")
+    public ResponseEntity<ServiceReportDataDto> getServiceData(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> endDate,
+            @RequestParam Optional<List<Long>> serviceIds
+    ) {
+        ServiceReportDataDto data = reportService.getServiceData(
+                parseDate(startDate), parseDate(endDate), parseIds(serviceIds)
+        );
+        return ResponseEntity.ok(data);
+    }
 
-            if (report != null) {
-                return ResponseEntity.ok(report);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            System.err.println(">>> ERROR: Error generating performance report: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(null);
-        }
+    /**
+     * Эндпоинт для ТАБЛИЦЫ МАСТЕРОВ
+     */
+    @GetMapping("/masters")
+    public ResponseEntity<MasterReportDataDto> getMasterData(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> endDate,
+            @RequestParam Optional<List<Long>> masterIds
+    ) {
+        MasterReportDataDto data = reportService.getMasterData(
+                parseDate(startDate), parseDate(endDate), parseIds(masterIds)
+        );
+        return ResponseEntity.ok(data);
     }
 }

@@ -8,7 +8,9 @@ import com.barbershop.dto.report.MasterPerformanceDataDto;
 import com.barbershop.dto.report.MasterReportDataDto;
 import com.barbershop.dto.report.DailyRevenueDataPointDto;
 import com.barbershop.dto.report.SalesReportDataDto;
+import com.barbershop.repository.MasterRepository;
 import com.barbershop.repository.ReviewRepository;
+import com.barbershop.repository.ServiceRepository;
 import com.barbershop.repository.TimetableRepository;
 import com.barbershop.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +27,14 @@ import java.math.BigDecimal;
 @Transactional(readOnly = true)
 public class ReportServiceImpl implements ReportService {
 
-    private final TimetableRepository timetableRepository;
-    private final ReviewRepository reviewRepository;
-    // возможно ServiceRepository, MasterRepository, UserRepository
+    @Autowired
+    private TimetableRepository timetableRepository;
+    @Autowired
+    private ReviewRepository reviewRepository;
+    @Autowired
+    private ServiceRepository serviceRepository;
+    @Autowired
+    private MasterRepository masterRepository;
 
     @Autowired
     public ReportServiceImpl(TimetableRepository timetableRepository, ReviewRepository reviewRepository) {
@@ -200,5 +207,24 @@ public class ReportServiceImpl implements ReportService {
         salesReportData.setDailyRevenueDataPoints(dailyRevenueDataPoints);
 
         return salesReportData;
+    }
+    @Override
+    public SalesReportDataDto getSalesData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds, List<Long> masterIds) {
+        // Просто вызываем ваш существующий приватный метод
+        return getSalesReportData(startDate, endDate, serviceIds, masterIds);
+    }
+
+    @Override
+    public ServiceReportDataDto getServiceData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds) {
+        // Просто вызываем ваш существующий приватный метод
+        // Обратите внимание: ваш метод не принимал masterIds, и я это уважаю
+        return getServicePerformanceReportData(startDate, endDate, serviceIds);
+    }
+
+    @Override
+    public MasterReportDataDto getMasterData(LocalDateTime startDate, LocalDateTime endDate, List<Long> masterIds) {
+        // Просто вызываем ваш существующий приватный метод
+        // Обратите внимание: ваш метод не принимал serviceIds, и я это уважаю
+        return getMasterPerformanceReportData(startDate, endDate, masterIds);
     }
 }

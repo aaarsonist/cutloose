@@ -224,7 +224,7 @@ function UserDashboard() {
   return (
     <div className={styles.dashboard}>
       <h2>{userName ? `${userName}. ` : ''}Личный кабинет</h2>
-      <h3>Запись на услугу:</h3>
+      <h3>Запись на услугу</h3>
       <div className={styles.bookingSection}>
         
         {/* Шаг 1: Выбор Услуги */}
