@@ -6,6 +6,7 @@ import com.barbershop.service.MasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -30,7 +31,25 @@ public class MasterController {
         List<Master> masters = masterService.getAllMasters();
         return ResponseEntity.ok(masters);
     }
-
+    @GetMapping("/service/{serviceId}")
+    public List<Master> getMastersByService(@PathVariable Long serviceId) {
+        return masterService.getMastersByService(serviceId);
+    }
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deactivateMaster(@PathVariable Long id) {
+        masterService.deactivateMaster(id);
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Master> createMaster(@RequestBody Master master) {
+        if (master.getName() == null || master.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        Master savedMaster = masterService.addMaster(master);
+        return ResponseEntity.ok(savedMaster);
+    }
     @GetMapping("/{masterId}/availability")
     public ResponseEntity<List<LocalTime>> getAvailableSlots(
             @PathVariable Long masterId,

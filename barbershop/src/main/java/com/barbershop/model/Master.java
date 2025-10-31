@@ -19,6 +19,9 @@ public class Master {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
     @OneToMany(mappedBy = "master")
     @JsonIgnore
     private List<Timetable> appointments;
