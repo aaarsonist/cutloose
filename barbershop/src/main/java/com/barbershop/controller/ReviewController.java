@@ -47,7 +47,7 @@ public class ReviewController {
         }
     }
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')") // Только админ может удалять
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
         reviewService.deleteReview(id);
         return ResponseEntity.ok().build();

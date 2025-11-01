@@ -24,10 +24,6 @@ public class MasterServiceImpl implements MasterService {
     public List<Master> getAllMasters() {
         return masterRepository.findAllByActiveTrue();
     }
-    @Override
-    public List<Master> getMastersByService(Long serviceId) {
-        return masterRepository.findActiveByServiceId(serviceId);
-    }
 
     @Override
     @Transactional

@@ -31,10 +31,6 @@ public class MasterController {
         List<Master> masters = masterService.getAllMasters();
         return ResponseEntity.ok(masters);
     }
-    @GetMapping("/service/{serviceId}")
-    public List<Master> getMastersByService(@PathVariable Long serviceId) {
-        return masterService.getMastersByService(serviceId);
-    }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deactivateMaster(@PathVariable Long id) {

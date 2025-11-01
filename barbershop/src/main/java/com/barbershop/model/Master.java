@@ -1,6 +1,8 @@
 package com.barbershop.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,6 +12,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Table(name = "masters")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Master {
 
     @Id

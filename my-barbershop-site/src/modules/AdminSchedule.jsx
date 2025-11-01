@@ -1,90 +1,174 @@
 import React, { useEffect, useState } from 'react'; 
 import api from '../api/api';
-import styles from './AdminDashboard.module.css'; // Используем общие стили
+import styles from './AdminDashboard.module.css'; 
+import ScheduleEditModal from './ScheduleEditModal'; 
+
+// Дни недели для колонок таблицы
+const DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+const DAY_NAMES_RU = {
+    MONDAY: "Пн", TUESDAY: "Вт", WEDNESDAY: "Ср", THURSDAY: "Чт", FRIDAY: "Пт", SATURDAY: "Сб", SUNDAY: "Вс"
+};
+const formatTime = (timeString) => {
+    if (typeof timeString === 'string' && timeString.length >= 5) {
+        return timeString.substring(0, 5);
+    }
+    return timeString; // Возвращаем как есть, если формат неизвестен
+};
 
 function AdminSchedule() {
-    // ВАША ЛОГИКА РАСПИСАНИЯ
-    const [timetable, setTimetable] = useState([]);
-    const [services, setServices] = useState([]); // Нужно для отображения имен услуг
+    // Состояния
+    const [masters, setMasters] = useState([]);
+    const [schedules, setSchedules] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // Состояния для модального окна
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingSchedule, setEditingSchedule] = useState(null); // { master, dayOfWeek, ... }
 
+    // 1. Загрузка всех данных при монтировании
     useEffect(() => {
-        fetchTimetable();
-        fetchServices();
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                // Загружаем мастеров и их графики параллельно
+                const [mastersRes, schedulesRes] = await Promise.all([
+                    api.get('/api/masters'),
+                    api.get('/api/work-schedule/all')
+                ]);
+                
+                setMasters(mastersRes.data);
+                setSchedules(schedulesRes.data);
+                
+            } catch (error) {
+                console.error("Ошибка при загрузке данных графика:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
     }, []);
 
-    const fetchTimetable = async () => {
+    // 2. Хелпер для поиска ячейки в данных
+    // Находит конкретную запись (Master + Day) в большом массиве schedules
+    const findScheduleEntry = (masterId, dayOfWeek) => {
+        return schedules.find(s => s.master.id === masterId && s.dayOfWeek === dayOfWeek);
+    };
+
+    // 3. Обработчик клика по ячейке
+    const handleCellClick = (master, dayOfWeek) => {
+        const entry = findScheduleEntry(master.id, dayOfWeek);
+        
+        if (entry) {
+            // Если запись есть, редактируем ее
+            setEditingSchedule(entry);
+        } else {
+            // Если записи нет (Выходной), создаем "шаблон" для редактирования
+            setEditingSchedule({
+                master: master,
+                dayOfWeek: dayOfWeek,
+                startTime: null,
+                endTime: null
+            });
+        }
+        setIsModalOpen(true);
+    };
+
+    // 4. Обработчик сохранения из модального окна
+    const handleSaveSchedule = async (updatedEntry) => {
         try {
-            const response = await api.get('/api/timetable');
-            setTimetable(response.data);
-            console.log('Расписание загружено:', response.data);
+            // Отправляем данные на бэкенд (бэкенд разберется, обновить или создать)
+            const response = await api.post('/api/work-schedule', updatedEntry);
+            const savedData = response.data; // Сохраненная/обновленная запись
+
+            // Обновляем наше локальное состояние, чтобы UI мгновенно обновился
+            setSchedules(prevSchedules => {
+                // Ищем, была ли уже такая запись
+                const existingIndex = prevSchedules.findIndex(
+                    s => s.master.id === updatedEntry.master.id && s.dayOfWeek === updatedEntry.dayOfWeek
+                );
+                
+                if (savedData) { // Если бэкенд вернул запись (т.е. это НЕ удаление)
+                    if (existingIndex > -1) {
+                        // Обновляем существующую
+                        const newSchedules = [...prevSchedules];
+                        newSchedules[existingIndex] = savedData;
+                        return newSchedules;
+                    } else {
+                        // Добавляем новую
+                        return [...prevSchedules, savedData];
+                    }
+                } else { // Если бэкенд вернул null (т.е. это было УДАЛЕНИЕ)
+                    if (existingIndex > -1) {
+                        // Убираем запись из массива
+                        return prevSchedules.filter((_, index) => index !== existingIndex);
+                    }
+                    return prevSchedules; // Ничего не делаем, ее и не было
+                }
+            });
+
         } catch (error) {
-            console.error('Ошибка при загрузке расписания:', error);
+            console.error("Ошибка при сохранении графика:", error);
+            alert("Не удалось сохранить график.");
+        } finally {
+            setIsModalOpen(false); // Закрываем модальное окно
         }
     };
 
-    // Загружаем сервисы, чтобы найти имя по ID
-    const fetchServices = async () => {
-        try {
-            const response = await api.get('/services'); 
-            setServices(response.data);
-        } catch (error) {
-            console.error('Ошибка при загрузке услуг:', error);
-        }
-    };
+    if (isLoading) {
+        return <div className={styles.loader}>Загрузка графика...</div>;
+    }
 
-    // ВАША ФУНКЦИЯ ФОРМАТИРОВАНИЯ ВРЕМЕНИ
-    const formatAppointmentTime = (isoString) => {
-        if (!isoString) return 'Неизвестное время';
-        try {
-             const date = new Date(isoString);
-             if (isNaN(date.getTime())) { throw new Error("Некорректный формат даты"); }
-             // ВАЖНО: Я сохраняю ваш офсет -3 часа.
-             const dateWithOffset = new Date(date.getTime() - (3 * 60 * 60 * 1000)); 
-             return dateWithOffset.toLocaleString('ru-RU', {
-                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
-             });
-         } catch (e) {
-             console.error("Ошибка форматирования даты:", isoString, e);
-             return 'Некорректное время';
-         }
-   };
-    
     return (
-        <div className={styles.dashboard}> {/* Используем .dashboard для сохранения стилей */}
-            {/* ВАША СЕКЦИЯ РАСПИСАНИЯ */}
-            <div className={styles.timetableSection}>
-                <h3>Расписание</h3>
-                <ul className={styles.timetableList}>
-                    {timetable
-                        .slice() 
-                        .sort((a, b) => new Date(a.appointmentTime) - new Date(b.appointmentTime)) 
-                        .map((entry) =>(
-                      <li key={entry.id} className={styles.timetableItem}>
-                        <div>
-                            {/* Ваша логика поиска имени услуги */}
-                            <span>{services.find(service => service.id === entry.service.id)?.name || 'Неизвестно'}</span>
-                        </div>
-                        <div>
-                        <span>{formatAppointmentTime(entry.appointmentTime)}</span>
-                        </div>
-                        <div>
-                        <span>{entry.master ? `Мастер: ${entry.master.name}` : 'Мастер: Неизвестно'}</span>
-                        </div>
-                      </li>    
+        <div className={styles.scheduleContainer}>
+            <h3>График работы мастеров</h3>
+            
+            <table className={styles.scheduleGrid}>
+                <thead>
+                    <tr>
+                        <th>Мастер</th>
+                        {DAYS_OF_WEEK.map(day => (
+                            <th key={day} className={(day === "SATURDAY" || day === "SUNDAY") ? styles.isWeekend : ""}>
+                                {DAY_NAMES_RU[day]}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {masters.map(master => (
+                        <tr key={master.id}>
+                            <td className={styles.masterNameCell}>{master.name}</td>
+                            
+                            {DAYS_OF_WEEK.map(day => {
+                                const entry = findScheduleEntry(master.id, day);
+                                const isOff = !entry || !entry.startTime;
+                                
+                                return (
+                                    <td 
+                                        key={day} 
+                                        className={`${styles.scheduleCell} ${isOff ? styles.isOff : ''} ${(day === "SATURDAY" || day === "SUNDAY") ? styles.isWeekend : ""}`}
+                                        onClick={() => handleCellClick(master, day)}
+                                    >
+                                        {isOff ? "Выходной" : `${formatTime(entry.startTime)} - ${formatTime(entry.endTime)}`}
+                                    </td>
+                                );
+                            })}
+                        </tr>
                     ))}
-                </ul>
-            </div>
-
-            {/* Заглушки для будущих функций, как мы обсуждали */}
-            <div style={{ margin: '20px 0' }}>
-              <h3>График работы мастеров</h3>
-              <p>[Здесь будет управление рабочими днями и часами мастеров]</p>
-            </div>
-
-            <div style={{ margin: '20px 0' }}>
-              <h3>Записать клиента</h3>
-              <p>[Здесь будет форма для ручной записи клиента администратором]</p>
-            </div>
+                </tbody>
+            </table>
+            
+            {/* Разделы "Календарь записей" и "Запись клиента" 
+              (Мы их пока не трогаем, но они будут здесь) 
+            */}
+            
+            {/* Модальное окно (рендерится, только когда isModalOpen = true) */}
+            <ScheduleEditModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveSchedule}
+                scheduleData={editingSchedule}
+                masterName={editingSchedule?.master?.name}
+            />
         </div>
     );
 }
