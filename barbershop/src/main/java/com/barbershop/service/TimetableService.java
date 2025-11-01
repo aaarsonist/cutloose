@@ -1,11 +1,11 @@
 package com.barbershop.service;
 
 import com.barbershop.model.Timetable;
-
+import com.barbershop.dto.AppointmentDto;
 import java.util.List;
 
 public interface TimetableService {
-    List<Timetable> getAllAppointments();
+    List<AppointmentDto> getAllAppointments();
     Timetable bookAppointment(Timetable timetable, Long userId);
     List<Timetable> getCompletedAppointmentsForUser(Long userId);
     /**
@@ -17,4 +17,5 @@ public interface TimetableService {
      * Отменяет (удаляет) запись. Проверяет, что отменяет владелец.
      */
     void cancelAppointment(Long appointmentId, Long userId);
+    void adminCancelAppointment(Long id);
 }

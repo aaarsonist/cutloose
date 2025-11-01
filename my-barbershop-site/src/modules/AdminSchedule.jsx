@@ -1,117 +1,170 @@
-import React, { useEffect, useState } from 'react'; 
+import React, { useEffect, useState, useCallback } from 'react'; 
 import api from '../api/api';
 import styles from './AdminDashboard.module.css'; 
-import ScheduleEditModal from './ScheduleEditModal'; 
 
-// Дни недели для колонок таблицы
+// --- НОВЫЕ ИМПОРТЫ ДЛЯ КАЛЕНДАРЯ ---
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'moment/locale/ru'; // Импортируем русскую локаль для moment
+
+// --- НОВЫЕ ИМПОРТЫ МОДАЛЬНЫХ ОКОН ---
+import ScheduleEditModal from './ScheduleEditModal'; // Ваше существующее окно
+import AppointmentInfoModal from './AppointmentInfoModal'; // Наше новое окно
+
+// Настраиваем локализацию для календаря
+moment.locale('ru');
+const localizer = momentLocalizer(moment);
+
+// Дни недели для сетки (без изменений)
 const DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 const DAY_NAMES_RU = {
     MONDAY: "Пн", TUESDAY: "Вт", WEDNESDAY: "Ср", THURSDAY: "Чт", FRIDAY: "Пт", SATURDAY: "Сб", SUNDAY: "Вс"
 };
-const formatTime = (timeString) => {
+const formatTime = (timeString) => { 
     if (typeof timeString === 'string' && timeString.length >= 5) {
         return timeString.substring(0, 5);
     }
-    return timeString; // Возвращаем как есть, если формат неизвестен
+    return timeString;
 };
 
+
 function AdminSchedule() {
-    // Состояния
+    // --- Состояния для Сетки Графика (без изменений) ---
     const [masters, setMasters] = useState([]);
     const [schedules, setSchedules] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    
-    // Состояния для модального окна
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingSchedule, setEditingSchedule] = useState(null); // { master, dayOfWeek, ... }
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [editingSchedule, setEditingSchedule] = useState(null); 
 
-    // 1. Загрузка всех данных при монтировании
+    // --- НОВЫЕ СОСТОЯНИЯ ДЛЯ КАЛЕНДАРЯ ЗАПИСЕЙ ---
+    const [appointments, setAppointments] = useState([]); // Для данных из /api/timetable
+    const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+    const [selectedAppointment, setSelectedAppointment] = useState(null);
+
+    // 1. Загрузка ВСЕХ данных
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [mastersRes, schedulesRes, appointmentsRes] = await Promise.all([
+                api.get('/api/masters'),
+                api.get('/api/work-schedule/all'),
+                api.get('/api/timetable') // <-- Этот GET теперь возвращает DTO
+            ]);
+            
+            setMasters(mastersRes.data);
+            setSchedules(schedulesRes.data);
+            
+            const calendarEvents = appointmentsRes.data.map(event => ({
+                ...event,
+                start: new Date(event.start),
+                end: new Date(event.end),
+            }));
+            setAppointments(calendarEvents);
+            
+        } catch (error) {
+            console.error("Ошибка при загрузке данных графика:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []); 
+
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                // Загружаем мастеров и их графики параллельно
-                const [mastersRes, schedulesRes] = await Promise.all([
-                    api.get('/api/masters'),
-                    api.get('/api/work-schedule/all')
-                ]);
-                
-                setMasters(mastersRes.data);
-                setSchedules(schedulesRes.data);
-                
-            } catch (error) {
-                console.error("Ошибка при загрузке данных графика:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchData();
-    }, []);
+    }, [fetchData]);
 
-    // 2. Хелпер для поиска ячейки в данных
-    // Находит конкретную запись (Master + Day) в большом массиве schedules
-    const findScheduleEntry = (masterId, dayOfWeek) => {
+    // --- Обработчики Сетки Графика (без изменений) ---
+    const findScheduleEntry = (masterId, dayOfWeek) => { 
         return schedules.find(s => s.master.id === masterId && s.dayOfWeek === dayOfWeek);
     };
-
-    // 3. Обработчик клика по ячейке
-    const handleCellClick = (master, dayOfWeek) => {
+    const handleCellClick = (master, dayOfWeek) => { 
         const entry = findScheduleEntry(master.id, dayOfWeek);
-        
         if (entry) {
-            // Если запись есть, редактируем ее
             setEditingSchedule(entry);
         } else {
-            // Если записи нет (Выходной), создаем "шаблон" для редактирования
             setEditingSchedule({
-                master: master,
-                dayOfWeek: dayOfWeek,
-                startTime: null,
-                endTime: null
+                master: master, dayOfWeek: dayOfWeek, startTime: null, endTime: null
             });
         }
-        setIsModalOpen(true);
+        setIsScheduleModalOpen(true);
     };
-
-    // 4. Обработчик сохранения из модального окна
-    const handleSaveSchedule = async (updatedEntry) => {
+    const handleSaveSchedule = async (updatedEntry) => { 
         try {
-            // Отправляем данные на бэкенд (бэкенд разберется, обновить или создать)
             const response = await api.post('/api/work-schedule', updatedEntry);
-            const savedData = response.data; // Сохраненная/обновленная запись
+            const savedData = response.data; 
 
-            // Обновляем наше локальное состояние, чтобы UI мгновенно обновился
             setSchedules(prevSchedules => {
-                // Ищем, была ли уже такая запись
                 const existingIndex = prevSchedules.findIndex(
                     s => s.master.id === updatedEntry.master.id && s.dayOfWeek === updatedEntry.dayOfWeek
                 );
                 
-                if (savedData) { // Если бэкенд вернул запись (т.е. это НЕ удаление)
+                if (savedData) { 
                     if (existingIndex > -1) {
-                        // Обновляем существующую
                         const newSchedules = [...prevSchedules];
                         newSchedules[existingIndex] = savedData;
                         return newSchedules;
                     } else {
-                        // Добавляем новую
                         return [...prevSchedules, savedData];
                     }
-                } else { // Если бэкенд вернул null (т.е. это было УДАЛЕНИЕ)
+                } else { 
                     if (existingIndex > -1) {
-                        // Убираем запись из массива
                         return prevSchedules.filter((_, index) => index !== existingIndex);
                     }
-                    return prevSchedules; // Ничего не делаем, ее и не было
+                    return prevSchedules; 
                 }
             });
-
         } catch (error) {
             console.error("Ошибка при сохранении графика:", error);
             alert("Не удалось сохранить график.");
         } finally {
-            setIsModalOpen(false); // Закрываем модальное окно
+            setIsScheduleModalOpen(false); 
         }
+    };
+
+    // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ КАЛЕНДАРЯ ЗАПИСЕЙ ---
+    
+    // 5. Клик по событию в календаре
+    const handleSelectEvent = (event) => {
+        setSelectedAppointment(event); 
+        setIsAppointmentModalOpen(true);
+    };
+
+    // 6. "Отмена" (удаление) записи АДМИНИСТРАТОРОМ
+    const handleDeleteAppointment = async (id) => {
+        if (window.confirm('Вы уверены, что хотите отменить эту запись?')) {
+            try {
+                // --- ИЗМЕНЕНИЕ: Используем новый АДМИНСКИЙ эндпоинт ---
+                await api.delete(`/api/timetable/admin/${id}`);
+                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+                
+                setAppointments(prev => prev.filter(app => app.id !== id));
+                setIsAppointmentModalOpen(false);
+                setSelectedAppointment(null);
+            } catch (error) {
+                console.error("Ошибка при отмене записи:", error);
+                if (error.response && error.response.status === 400) {
+                    alert("Не удалось отменить: эта запись уже в прошлом.");
+                } else {
+                    alert("Не удалось отменить запись.");
+                }
+            }
+        }
+    };
+    
+    // 7. Сообщения для календаря (на русском)
+    const messages = {
+        allDay: 'Весь день',
+        previous: 'Назад',
+        next: 'Вперед',
+        today: 'Сегодня',
+        month: 'Месяц',
+        week: 'Неделя',
+        day: 'День',
+        agenda: 'Список',
+        date: 'Дата',
+        time: 'Время',
+        event: 'Событие',
+        noEventsInRange: 'На этот период нет записей.',
     };
 
     if (isLoading) {
@@ -119,57 +172,81 @@ function AdminSchedule() {
     }
 
     return (
-        <div className={styles.scheduleContainer}>
-            <h3>График работы мастеров</h3>
-            
-            <table className={styles.scheduleGrid}>
-                <thead>
-                    <tr>
-                        <th>Мастер</th>
-                        {DAYS_OF_WEEK.map(day => (
-                            <th key={day} className={(day === "SATURDAY" || day === "SUNDAY") ? styles.isWeekend : ""}>
-                                {DAY_NAMES_RU[day]}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {masters.map(master => (
-                        <tr key={master.id}>
-                            <td className={styles.masterNameCell}>{master.name}</td>
-                            
-                            {DAYS_OF_WEEK.map(day => {
-                                const entry = findScheduleEntry(master.id, day);
-                                const isOff = !entry || !entry.startTime;
-                                
-                                return (
-                                    <td 
-                                        key={day} 
-                                        className={`${styles.scheduleCell} ${isOff ? styles.isOff : ''} ${(day === "SATURDAY" || day === "SUNDAY") ? styles.isWeekend : ""}`}
-                                        onClick={() => handleCellClick(master, day)}
-                                    >
-                                        {isOff ? "Выходной" : `${formatTime(entry.startTime)} - ${formatTime(entry.endTime)}`}
-                                    </td>
-                                );
-                            })}
+        <>
+            {/* --- СЕТКА ГРАФИКА (Сверху) --- */}
+            <div className={styles.scheduleContainer}>
+                <h2>Сводный график работы</h2>
+                <table className={styles.scheduleGrid}>
+                    {/* ... (код <thead> и <tbody> без изменений) ... */}
+                    <thead>
+                        <tr>
+                            <th>Мастер</th>
+                            {DAYS_OF_WEEK.map(day => (
+                                <th key={day} className={(day === "SATURDAY" || day === "SUNDAY") ? styles.isWeekend : ""}>
+                                    {DAY_NAMES_RU[day]}
+                                </th>
+                            ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {masters.map(master => (
+                            <tr key={master.id}>
+                                <td className={styles.masterNameCell}>{master.name}</td>
+                                {DAYS_OF_WEEK.map(day => {
+                                    const entry = findScheduleEntry(master.id, day);
+                                    const isOff = !entry || !entry.startTime;
+                                    return (
+                                        <td 
+                                            key={day} 
+                                            className={`${styles.scheduleCell} ${isOff ? styles.isOff : ''} ${(day === "SATURDAY" || day === "SUNDAY") ? styles.isWeekend : ""}`}
+                                            onClick={() => handleCellClick(master, day)}
+                                        >
+                                            {isOff ? "Выходной" : `${formatTime(entry.startTime)} - ${formatTime(entry.endTime)}`}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             
-            {/* Разделы "Календарь записей" и "Запись клиента" 
-              (Мы их пока не трогаем, но они будут здесь) 
-            */}
+            {/* --- НОВЫЙ КАЛЕНДАРЬ ЗАПИСЕЙ (Снизу) --- */}
+            <div className={styles.calendarContainer}>
+                <h2>Календарь записей</h2>
+                <Calendar
+                    localizer={localizer}
+                    events={appointments}
+                    startAccessor="start"
+                    endAccessor="end"
+                    style={{ height: 600 }} // Задаем высоту
+                    messages={messages} // Русификация
+                    onSelectEvent={handleSelectEvent} // Клик по записи
+                    defaultView="week" // Вид по умолчанию - неделя
+                    views={['month', 'week', 'day']} // Доступные виды
+                    step={30} // Шаг в 30 минут
+                    timeslots={2} // 2 слота в час
+                    min={new Date(0, 0, 0, 8, 0, 0)} // Начало рабочего дня (8:00)
+                    max={new Date(0, 0, 0, 21, 0, 0)} // Конец рабочего дня (21:00)
+                />
+            </div>
             
-            {/* Модальное окно (рендерится, только когда isModalOpen = true) */}
+            {/* --- МОДАЛЬНЫЕ ОКНА --- */}
             <ScheduleEditModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
                 onSave={handleSaveSchedule}
                 scheduleData={editingSchedule}
                 masterName={editingSchedule?.master?.name}
             />
-        </div>
+            
+            <AppointmentInfoModal
+                isOpen={isAppointmentModalOpen}
+                onClose={() => setIsAppointmentModalOpen(false)}
+                onDelete={handleDeleteAppointment}
+                event={selectedAppointment}
+            />
+        </>
     );
 }
 

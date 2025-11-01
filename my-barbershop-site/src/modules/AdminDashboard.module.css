@@ -779,3 +779,136 @@
 .recommendationList li.critical strong {
     color: #dc2626;
 }
+/* =================================================================== */
+/* 3. РАЗДЕЛ УПРАВЛЕНИЯ (AdminManagement.jsx) - СТИЛИ ОТЗЫВОВ */
+/* =================================================================== */
+
+/* Копируем стиль .managementWidget */
+.reviewWidget {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.reviewWidget h3 {
+  margin-top: 0;
+  border-bottom: 2px solid #f0a500;
+  padding-bottom: 10px;
+  text-align: left; 
+  color: #333;
+}
+
+/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */
+/* (Добавлены 2 колонки) */
+.reviewList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  
+  /* Новые стили для 2-х колонок */
+  column-count: 2;
+  column-gap: 20px; /* Пространство между колонками */
+}
+
+/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */
+/* (Добавлен 'break-inside' и 'margin-bottom') */
+.reviewItem {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  
+  padding: 8px 5px; 
+  border-bottom: 1px solid #f0f0f0;
+  
+  /* Новые стили */
+  break-inside: avoid; /* Предотвращает разрыв элемента между колонками */
+  margin-bottom: 10px; /* Отступ между элементами в одной колонке */
+}
+.reviewItem:last-child {
+  border-bottom: none;
+}
+
+.reviewInfo {
+  font-size: 1rem; 
+  color: #333;
+  word-break: break-word; 
+  text-align: left;
+}
+
+.reviewButtons {
+  display: flex;
+  flex-direction: column; 
+  gap: 5px; 
+  flex-shrink: 0; 
+  margin-left: 15px; 
+}
+/* =================================================================== */
+/* 4. РАЗДЕЛ РАСПИСАНИЯ (AdminSchedule.jsx) - НОВЫЕ СТИЛИ */
+/* =================================================================== */
+
+/* Контейнер для календаря */
+.calendarContainer {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-top: 30px; /* Отступ от сетки графика */
+}
+.calendarContainer h2 {
+  text-align: left;
+  margin-top: 0;
+  border-bottom: 2px solid #f0a500;
+  padding-bottom: 10px;
+}
+
+/* Стилизация react-big-calendar под ваш цвет */
+.rbc-event {
+  background-color: #f0a500 !important; /* Ваш оранжевый */
+  border-color: #d49200 !important;
+}
+.rbc-today {
+  background-color: #fff8e1 !important; /* Светло-желтый для "сегодня" */
+}
+.rbc-toolbar button.rbc-active {
+    background-color: #f0a500 !important; /* Активная кнопка (Месяц/Неделя/День) */
+    border-color: #d49200 !important;
+}
+
+/* =================================================================== */
+/* 5. МОДАЛЬНОЕ ОКНО ЗАПИСИ (AppointmentInfoModal.jsx) */
+/* =================================================================== */
+
+.appointmentDetails {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.appointmentDetails li {
+  font-size: 1rem;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+}
+.appointmentDetails li span {
+  color: #777;
+  margin-right: 15px;
+}
+.appointmentDetails li strong {
+  color: #333;
+  text-align: right;
+}
+
+/* Делаем кнопку "Удалить" в модальном окне красной */
+.modalButtons .deleteButton {
+  flex: 1;
+}
+
+/* --- НОВЫЙ СТИЛЬ ДЛЯ ОТКЛЮЧЕННОЙ КНОПКИ --- */
+.modalButtons .deleteButton:disabled {
+  background-color: #f0f0f0 !important;
+  border-color: #dcdcdc !important;
+  color: #aaa !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}

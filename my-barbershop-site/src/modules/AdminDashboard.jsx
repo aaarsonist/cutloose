@@ -42,7 +42,7 @@ function AdminDashboard() {
           onClick={() => setActiveSection('analytics')}
           className={activeSection === 'analytics' ? styles.active : ''}
         >
-          Аналитика и Прогнозы
+          Аналитика и прогнозы
         </button>
       </div>
 

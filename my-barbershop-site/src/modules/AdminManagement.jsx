@@ -3,7 +3,7 @@ import api from '../api/api';
 import styles from './AdminDashboard.module.css'; // Используем общие стили
 
 function AdminManagement() {
-    // --- Состояния ---
+    // --- Состояния (без изменений) ---
     const [services, setServices] = useState([]);
     const [masters, setMasters] = useState([]);
     const [reviews, setReviews] = useState([]); 
@@ -19,8 +19,8 @@ function AdminManagement() {
         fetchMasters(); 
     }, []);
 
-    // --- ЛОГИКА УСЛУГ ---
-    const fetchServices = async () => { /* ... (без изменений) ... */ 
+    // --- ЛОГИКА УСЛУГ (без изменений) ---
+    const fetchServices = async () => { /* ... */ 
         try {
             const response = await api.get('/services'); 
             setServices(response.data);
@@ -28,11 +28,11 @@ function AdminManagement() {
             console.error('Ошибка при загрузке услуг:', error);
         }
     };
-    const handleServiceFormChange = (e) => { /* ... (без изменений) ... */ 
+    const handleServiceFormChange = (e) => { /* ... */ 
         const { name, value } = e.target;
         setNewService(prevState => ({ ...prevState, [name]: value }));
     };
-    const handleAddService = async () => { /* ... (без изменений) ... */ 
+    const handleAddService = async () => { /* ... */ 
         if (!newService.name || !newService.price || !newService.duration) {
             alert('Пожалуйста, заполните все поля (Название, Цена, Длительность).');
             return;
@@ -53,10 +53,10 @@ function AdminManagement() {
             alert('Не удалось добавить услугу.');
         }
     };
-    const handleEditService = (service) => { /* ... (без изменений) ... */ 
+    const handleEditService = (service) => { /* ... */ 
         setEditingService(service);
     };
-    const handleSaveEdit = async () => { /* ... (без изменений) ... */ 
+    const handleSaveEdit = async () => { /* ... */ 
         try {
             const serviceToSave = {
                 ...editingService,
@@ -70,7 +70,7 @@ function AdminManagement() {
             console.error('Ошибка при обновлении услуги:', error);
         }
     };
-    const handleDeleteService = async (id) => { /* ... (без изменений) ... */ 
+    const handleDeleteService = async (id) => { /* ... */ 
         if (window.confirm('Вы уверены, что хотите удалить эту услугу?')) {
             try {
                 await api.delete(`/services/${id}`);
@@ -82,8 +82,8 @@ function AdminManagement() {
         }
     };
 
-    // --- ЛОГИКА МАСТЕРОВ ---
-    const fetchMasters = async () => { /* ... (без изменений) ... */ 
+    // --- ЛОГИКА МАСТЕРОВ (без изменений) ---
+    const fetchMasters = async () => { /* ... */ 
         try {
             const response = await api.get('/api/masters'); 
             setMasters(response.data);
@@ -91,7 +91,7 @@ function AdminManagement() {
             console.error('Ошибка при загрузке мастеров:', error);
         }
     };
-    const handleDeleteMaster = async (id) => { /* ... (без изменений) ... */ 
+    const handleDeleteMaster = async (id) => { /* ... */ 
         if (window.confirm('Вы уверены, что хотите удалить этого мастера? Это действие необратимо.')) {
             try {
                 await api.delete(`/api/masters/${id}`);
@@ -102,7 +102,7 @@ function AdminManagement() {
             }
         }
     };
-    const handleAddMaster = async () => { /* ... (без изменений) ... */ 
+    const handleAddMaster = async () => { /* ... */ 
         if (!newMasterName.trim()) {
             alert('Пожалуйста, введите имя мастера.');
             return;
@@ -119,8 +119,8 @@ function AdminManagement() {
         }
     };
 
-    // --- ЛОГИКА ОТЗЫВОВ (с добавлением удаления) ---
-    const fetchReviews = async () => { /* ... (без изменений) ... */ 
+    // --- ЛОГИКА ОТЗЫВОВ (без изменений) ---
+    const fetchReviews = async () => { /* ... */ 
         try {
             const response = await api.get('/api/reviews');
             setReviews(response.data);
@@ -128,21 +128,19 @@ function AdminManagement() {
             console.error('Ошибка при загрузке отзывов:', error);
         }
     };
-    const renderStars = (rating) => { /* ... (без изменений) ... */ 
+    const renderStars = (rating) => { /* ... */ 
         if (typeof rating !== 'number' || rating < 1 || rating > 5) {
             return 'Нет оценки';
         }
         const fullStar = '★';
         const emptyStar = '☆';
-        return fullStar.repeat(rating) + emptyStar.repeat(5 - rating);
+        return fullStar.repeat(rating) + emptyStar.repeat(5 - Math.round(rating));
     };
-    
-    // НОВАЯ ЛОГИКА: Удаление отзыва
-    const handleDeleteReview = async (id) => {
+    const handleDeleteReview = async (id) => { /* ... */ 
         if (window.confirm('Вы уверены, что хотите удалить этот отзыв?')) {
             try {
                 await api.delete(`/api/reviews/${id}`);
-                fetchReviews(); // Обновляем список отзывов
+                fetchReviews(); 
             } catch (error) {
                 console.error('Ошибка при удалении отзыва:', error);
                 alert('Не удалось удалить отзыв.');
@@ -151,15 +149,19 @@ function AdminManagement() {
     };
 
 
-    // --- JSX (С ПЕРЕСТАНОВКОЙ) ---
+    // --- JSX (С ИЗМЕНЕННЫМИ КЛАССАМИ ДЛЯ ОТЗЫВОВ) ---
     return (
         <div className={styles.dashboard}> 
-            <div className={styles.managementWidget} style={{marginBottom: '30px'}}> {/* Добавляем отступ снизу */}
+            <div className={styles.reviewWidget} style={{marginBottom: '30px'}}> 
                 <h3>Отзывы клиентов</h3>
-                <ul className={styles.managementList}>
+                
+                {/* ИЗМЕНЕНИЕ: .managementList -> .reviewList */}
+                <ul className={styles.reviewList}>
                     {reviews.map((review) => (
-                         <li key={review.id} className={styles.managementItem}>
-                             <span className={styles.itemInfo}>
+                         /* ИЗМЕНЕНИЕ: .managementItem -> .reviewItem */
+                         <li key={review.id} className={styles.reviewItem}>
+                             {/* ИЗМЕНЕНИЕ: .itemInfo -> .reviewInfo */}
+                             <span className={styles.reviewInfo}>
                                 {review.appointment ? (
                                     <>
                                         <strong>{review.appointment.service?.name || 'Услуга'}</strong> ({renderStars(review.rating)})
@@ -176,14 +178,15 @@ function AdminManagement() {
                                     </>
                                 )}
                              </span>
-                             <div className={styles.itemButtons}>
+                             {/* ИЗМЕНЕНИЕ: .itemButtons -> .reviewButtons */}
+                             <div className={styles.reviewButtons}>
                                 <button onClick={() => handleDeleteReview(review.id)} className={styles.deleteButton}>
                                     Удалить
                                 </button>
                              </div>
                          </li>
                     ))}
-                     {reviews.length === 0 && <li className={styles.managementItem}>Список отзывов пуст.</li>} 
+                     {reviews.length === 0 && <li className={styles.reviewItem}>Список отзывов пуст.</li>} 
                 </ul>
             </div>
 
@@ -197,7 +200,6 @@ function AdminManagement() {
                         {services.map((service) => (
                             <li key={service.id} className={styles.managementItem}>
                                 {editingService?.id === service.id ? (
-                                    // Форма РЕДАКТИРОВАНИЯ
                                     <div className={styles.editForm}>
                                         <input type="text" value={editingService.name} onChange={(e) => setEditingService({ ...editingService, name: e.target.value })} />
                                         <input type="number" value={editingService.price} onChange={(e) => setEditingService({ ...editingService, price: e.target.value })} />
@@ -209,7 +211,6 @@ function AdminManagement() {
                                         <button onClick={handleSaveEdit}>Сохранить</button>
                                     </div>
                                 ) : (
-                                    // Обычная строка
                                     <>
                                         <span className={styles.itemInfo}>
                                             {service.name} - {service.price} р. ({service.duration || 'N/A'} мин.)
@@ -224,7 +225,6 @@ function AdminManagement() {
                         ))}
                     </ul>
                     
-                    {/* --- Форма ДОБАВЛЕНИЯ УСЛУГИ (внутри виджета) --- */}
                     <h3 className={styles.formToggle}>Добавить услугу</h3>
                     <div className={styles.editForm}>
                         <input type="text" placeholder="Название услуги" name="name" value={newService.name} onChange={handleServiceFormChange} />
@@ -254,7 +254,6 @@ function AdminManagement() {
                         ))}
                     </ul>
                     
-                    {/* --- Форма ДОБАВЛЕНИЯ МАСТЕРА (внутри виджета) --- */}
                     <h3 className={styles.formToggle}>Добавить мастера</h3>
                     <div className={styles.editForm}>
                         <input 

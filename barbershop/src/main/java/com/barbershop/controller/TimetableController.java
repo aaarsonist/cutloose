@@ -1,5 +1,6 @@
 package com.barbershop.controller;
 
+import com.barbershop.dto.AppointmentDto;
 import com.barbershop.model.Timetable;
 import com.barbershop.model.User;
 import com.barbershop.service.TimetableService;
@@ -27,7 +28,7 @@ public class TimetableController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<Timetable>> getAllAppointments() {
+    public ResponseEntity<List<AppointmentDto>> getAllAppointments() {
         return ResponseEntity.ok(timetableService.getAllAppointments());
     }
     @PostMapping
@@ -68,10 +69,7 @@ public class TimetableController {
         return ResponseEntity.ok(upcomingAppointments);
     }
 
-    /**
-     * Отменяет (УДАЛЯЕТ) запись по ее ID.
-     */
-    @DeleteMapping("/{id}") // <-- ИЗМЕНЕНО НА DELETE
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> cancelAppointment(@PathVariable Long id, Authentication authentication) {
         String username = authentication.getName();
         User currentUser = userRepository.findByUsername(username);
@@ -89,6 +87,20 @@ public class TimetableController {
         } catch (Exception e) {
             // Если пользователь пытается удалить чужую запись (AccessDeniedException)
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }
+    }
+    @DeleteMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> adminDeleteAppointment(@PathVariable Long id) {
+        try {
+            timetableService.adminCancelAppointment(id);
+            return ResponseEntity.ok().build(); // 200 OK
+        } catch (IllegalStateException e) {
+            // 400 Bad Request (Нельзя отменить прошедшую запись)
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            // 404 Not Found (Запись не найдена)
+            return ResponseEntity.notFound().build();
         }
     }
 }

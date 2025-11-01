@@ -3,6 +3,7 @@ package com.barbershop.repository;
 import com.barbershop.model.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -48,4 +49,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             "appointment.bookedBy"
     })
     List<Review> findAll();
+    @Modifying // Обязательно для операций DELETE
+    @Query("DELETE FROM Review r WHERE r.appointment.id = :appointmentId")
+    void deleteByAppointmentId(@Param("appointmentId") Long appointmentId);
 }
