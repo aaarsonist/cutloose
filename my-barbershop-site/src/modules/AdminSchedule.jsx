@@ -58,21 +58,16 @@ function AdminSchedule() {
             setSchedules(schedulesRes.data);
             
             const calendarEvents = appointmentsRes.data.map(event => {
-                
+                // event.start - это строка "2025-10-01T14:00:00"
+                // 1. Заменяем "T" на " ", чтобы new Date() распознал ее как ЛОКАЛЬНОЕ время
                 const localStartStr = event.start.replace('T', ' ');
                 const localEndStr = event.end.replace('T', ' ');
 
-                const startDate = new Date(localStartStr);
-                const endDate = new Date(localEndStr);
-
-                const offset = 3 * 60 * 60 * 1000;
-                startDate.setTime(startDate.getTime() - offset);
-                endDate.setTime(endDate.getTime() - offset);
-                
+                // 2. Создаем Date-объекты
                 return {
                     ...event,
-                    start: startDate,
-                    end: endDate,
+                    start: new Date(localStartStr),
+                    end: new Date(localEndStr),
                 };
             });
             setAppointments(calendarEvents);

@@ -150,7 +150,6 @@ public class TimetableServiceImpl implements TimetableService {
         // 1. Находим или создаем "гостевого" пользователя
         User client = userService.findOrCreateGuestUser(request.getClientEmail(), request.getClientName());
 
-        // 2. Находим Мастера и Услугу
         Master master = masterRepository.findById(request.getMasterId())
                 .orElseThrow(() -> new RuntimeException("Master not found"));
         ServiceEntity service = serviceRepository.findById(request.getServiceId())
@@ -162,7 +161,7 @@ public class TimetableServiceImpl implements TimetableService {
         newAppointment.setMaster(master);
         newAppointment.setService(service);
         newAppointment.setAppointmentTime(request.getAppointmentTime());
-        newAppointment.setStatus(BookingStatus.BOOKED); // Сразу "Запланировано"
+        newAppointment.setStatus(BookingStatus.BOOKED);
 
         return timetableRepository.save(newAppointment);
     }

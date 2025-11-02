@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.HashSet;
 import java.util.UUID;
+import com.barbershop.model.Role;
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -23,6 +23,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Пользователь с таким email уже существует");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(Role.USER);
         return userRepository.save(user);
     }
 
@@ -31,7 +32,7 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public User findOrCreateGuestUser(String email, String name) {
-        // 1. Пытаемся найти пользователя по email (который у вас = username)
+        // 1. Пытаемся найти пользователя по email
         User existingUser = userRepository.findByUsername(email);
         if (existingUser != null) {
             return existingUser; // Нашли, возвращаем
@@ -42,8 +43,12 @@ public class UserServiceImpl implements UserService {
         newGuest.setUsername(email); // email = username
         newGuest.setName(name);
 
-        // 4. Генерируем случайный, никому не известный пароль-заглушку
-        // (Это нужно, т.к. поле 'password' в User.java @Column(nullable = false))
+        // --- ИСПРАВЛЕНИЕ: Устанавливаем роль по умолчанию ---
+        // Это исправит ошибку 'role cannot be null'
+        newGuest.setRole(Role.USER);
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+        // 4. Генерируем случайный пароль-заглушку
         String randomPassword = UUID.randomUUID().toString();
         newGuest.setPassword(passwordEncoder.encode(randomPassword));
 

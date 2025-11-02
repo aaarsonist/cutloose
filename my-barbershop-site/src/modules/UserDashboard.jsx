@@ -110,14 +110,16 @@ function UserDashboard() {
   };
 
   const handleBooking = () => {
-    // Проверяем новые states
     if (!selectedService || !selectedMaster || !selectedDate || !selectedSlot) {
       alert("Выберите услугу, мастера, дату и свободное время!");
       return;
     }
-    const localDateTime = new Date(`${selectedDate}T${selectedSlot}`);
-    localDateTime.setHours(localDateTime.getHours() + 6);
-    const finalAppointmentTime = localDateTime.toISOString();
+    
+    // --- ИСПРАВЛЕНИЕ: Убираем .toISOString() и +6 часов ---
+    // Мы отправляем "локальную" строку, как и в Админ-панели
+    // Бэкенд ожидает "2025-11-05T14:00"
+    const finalAppointmentTime = `${selectedDate}T${selectedSlot}`;
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const appointmentData = {
       service: { id: selectedService },
@@ -125,23 +127,21 @@ function UserDashboard() {
       appointmentTime: finalAppointmentTime, 
     };
 
-    api.post('/api/timetable', appointmentData)
+    api.post('/api/timetable', appointmentData) // Клиентский эндпоинт
       .then(() => {
         alert("Вы успешно забронировали услугу!");
-        // Сбрасываем все
         setSelectedService('');
         setSelectedMaster(''); 
         setSelectedDate('');
         setSelectedSlot('');
         setAvailableSlots([]);
-        // Обновляем списки
         fetchUpcomingAppointments();
         fetchCompletedAppointments();
       })
       .catch(error => {
         console.error("Ошибка при бронировании:", error);
         alert("Ошибка при бронировании. Возможно, этот слот только что заняли. Пожалуйста, обновите слоты.");
-        fetchAvailableSlots(); // Обновляем слоты, если была ошибка
+        fetchAvailableSlots(); 
       });
   };
 
@@ -201,25 +201,28 @@ function UserDashboard() {
   };
 
     const formatAppointmentTime = (isoString) => {
-        if (!isoString) return 'Неизвестное время';
-        try {
-            const date = new Date(isoString);
-             if (isNaN(date.getTime())) {
-                 throw new Error("Invalid date format");
-             }
-             const dateWithOffset = new Date(date.getTime() - (3 * 60 * 60 * 1000));
-             return dateWithOffset.toLocaleString('ru-RU', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch (e) {
-            console.error("Error formatting date:", isoString, e);
-            return 'Некорректное время';
-        }
-    };
+      if (!isoString) return 'Неизвестное время';
+      try {
+          const localDateTimeStr = isoString.replace('T', ' ');
+          const date = new Date(localDateTimeStr);
+           if (isNaN(date.getTime())) {
+               throw new Error("Invalid date format");
+           }
+
+           const dateWithOffset = new Date(date.getTime());
+           
+           return dateWithOffset.toLocaleString('ru-RU', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+          });
+      } catch (e) {
+          console.error("Error formatting date:", isoString, e);
+          return 'Некорректное время';
+      }
+  };
 
   return (
     <div className={styles.dashboard}>
