@@ -1,6 +1,7 @@
 package com.barbershop.controller;
 
 import com.barbershop.dto.AppointmentDto;
+import com.barbershop.dto.AdminBookingRequestDto;
 import com.barbershop.model.Timetable;
 import com.barbershop.model.User;
 import com.barbershop.service.TimetableService;
@@ -101,6 +102,17 @@ public class TimetableController {
         } catch (Exception e) {
             // 404 Not Found (Запись не найдена)
             return ResponseEntity.notFound().build();
+        }
+    }
+    @PostMapping("/admin/book")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Timetable> adminBookAppointment(@RequestBody AdminBookingRequestDto request) {
+        try {
+            Timetable newAppointment = timetableService.adminBookAppointment(request);
+            return ResponseEntity.ok(newAppointment);
+        } catch (Exception e) {
+            // (На случай, если мастер/услуга не найдены)
+            return ResponseEntity.badRequest().build();
         }
     }
 }

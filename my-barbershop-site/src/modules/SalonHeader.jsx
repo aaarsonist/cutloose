@@ -16,10 +16,10 @@ export default function SalonHeader() {
       
       <section className={styles.contentWrapper}>
         <h1 className={styles.title}>
-          Хорошие волосы - это <br /> залог красивого образа!
+          Ваша красота – это <br /> отражение заботы о себе!
         </h1>
         <p className={styles.subtitle}>
-          Вы готовы к погружению в яркую страничку Вашей истории? <br />
+          Вы готовы начать свое преображение? <br />
           Тогда Добро Пожаловать! <br />
         </p>
       </section>

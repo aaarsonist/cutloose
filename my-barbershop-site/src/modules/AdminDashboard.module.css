@@ -912,3 +912,91 @@
   cursor: not-allowed;
   box-shadow: none !important;
 }
+/* =================================================================== */
+/* 4. РАЗДЕЛ РАСПИСАНИЯ (AdminSchedule.jsx) - НОВЫЕ СТИЛИ */
+/* =================================================================== */
+
+/* --- НОВЫЙ ЗАГОЛОВОК КАЛЕНДАРЯ (с кнопкой) --- */
+.calendarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f0a500;
+    margin-bottom: 15px; /* Отступ до календаря */
+}
+.calendarHeader h2 {
+    border-bottom: none; /* Убираем дублирующую рамку */
+    margin: 0;
+    padding-bottom: 10px;
+}
+.bookClientButton {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background-color: #f0a500;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.bookClientButton:hover {
+    background-color: #d49200;
+}
+/* --- КОНЕЦ НОВЫХ СТИЛЕЙ ЗАГОЛОВКА --- */
+
+
+/* Контейнер для календаря */
+.calendarContainer {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-top: 30px; 
+}
+
+/* (Стили .rbc-event, .rbc-today ... остаются без изменений) */
+
+
+/* =================================================================== */
+/* 5. МОДАЛЬНОЕ ОКНО БРОНИРОВАНИЯ (AdminBookingModal.jsx) */
+/* =================================================================== */
+
+/* Контейнер для кнопок-слотов */
+.slotContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+.slotContainer p {
+    margin: 0;
+    font-style: italic;
+    color: #777;
+}
+
+.slotButton {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.slotButton:hover {
+    background-color: #f0f0f0;
+    border-color: #aaa;
+}
+/* Стиль для ВЫБРАННОГО слота */
+.slotButton.active {
+    background-color: #f0a500;
+    color: white;
+    border-color: #f0a500;
+}

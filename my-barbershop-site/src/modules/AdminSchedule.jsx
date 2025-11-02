@@ -11,6 +11,7 @@ import 'moment/locale/ru'; // Импортируем русскую локаль
 // --- НОВЫЕ ИМПОРТЫ МОДАЛЬНЫХ ОКОН ---
 import ScheduleEditModal from './ScheduleEditModal'; // Ваше существующее окно
 import AppointmentInfoModal from './AppointmentInfoModal'; // Наше новое окно
+import AdminBookingModal from './AdminBookingModal';
 
 // Настраиваем локализацию для календаря
 moment.locale('ru');
@@ -41,6 +42,7 @@ function AdminSchedule() {
     const [appointments, setAppointments] = useState([]); // Для данных из /api/timetable
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
+    const [isAdminBookingModalOpen, setIsAdminBookingModalOpen] = useState(false);
 
     // 1. Загрузка ВСЕХ данных
     const fetchData = useCallback(async () => {
@@ -55,11 +57,24 @@ function AdminSchedule() {
             setMasters(mastersRes.data);
             setSchedules(schedulesRes.data);
             
-            const calendarEvents = appointmentsRes.data.map(event => ({
-                ...event,
-                start: new Date(event.start),
-                end: new Date(event.end),
-            }));
+            const calendarEvents = appointmentsRes.data.map(event => {
+                
+                const localStartStr = event.start.replace('T', ' ');
+                const localEndStr = event.end.replace('T', ' ');
+
+                const startDate = new Date(localStartStr);
+                const endDate = new Date(localEndStr);
+
+                const offset = 3 * 60 * 60 * 1000;
+                startDate.setTime(startDate.getTime() - offset);
+                endDate.setTime(endDate.getTime() - offset);
+                
+                return {
+                    ...event,
+                    start: startDate,
+                    end: endDate,
+                };
+            });
             setAppointments(calendarEvents);
             
         } catch (error) {
@@ -135,7 +150,6 @@ function AdminSchedule() {
             try {
                 // --- ИЗМЕНЕНИЕ: Используем новый АДМИНСКИЙ эндпоинт ---
                 await api.delete(`/api/timetable/admin/${id}`);
-                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                 
                 setAppointments(prev => prev.filter(app => app.id !== id));
                 setIsAppointmentModalOpen(false);
@@ -148,6 +162,23 @@ function AdminSchedule() {
                     alert("Не удалось отменить запись.");
                 }
             }
+        }
+    };
+
+    const handleAdminBookingSave = async (bookingRequest) => {
+        try {
+            // Вызываем новый эндпоинт
+            await api.post('/api/timetable/admin/book', bookingRequest);
+            
+            alert('Клиент успешно записан!');
+            setIsAdminBookingModalOpen(false); // Закрываем модалку
+            
+            // ПЕРЕЗАГРУЖАЕМ ВСЕ ДАННЫЕ (включая календарь)
+            fetchData(); 
+            
+        } catch (error) {
+            console.error("Ошибка при создании записи:", error);
+            alert("Не удалось создать запись. Возможно, слот уже занят.");
         }
     };
     
@@ -173,11 +204,39 @@ function AdminSchedule() {
 
     return (
         <>
-            {/* --- СЕТКА ГРАФИКА (Сверху) --- */}
+            <div className={styles.calendarContainer}>
+                {/* --- НОВЫЙ ЗАГОЛОВОК С КНОПКОЙ --- */}
+                <div className={styles.calendarHeader}>
+                    <h3>Календарь записей</h3>
+                    <button 
+                        className={styles.bookClientButton}
+                        onClick={() => setIsAdminBookingModalOpen(true)}
+                    >
+                        + Записать клиента
+                    </button>
+                </div>
+                {/* --- КОНЕЦ НОВОГО ЗАГОЛОВКА --- */}
+                
+                <Calendar
+                    localizer={localizer}
+                    events={appointments}
+                    startAccessor="start"
+                    endAccessor="end"
+                    style={{ height: 600 }} 
+                    messages={messages} 
+                    onSelectEvent={handleSelectEvent} 
+                    defaultView="week" 
+                    views={['month', 'week', 'day']} 
+                    step={30} 
+                    timeslots={2} 
+                    min={new Date(0, 0, 0, 9, 0, 0)} 
+                    max={new Date(0, 0, 0, 21, 0, 0)} 
+                />
+            </div>
+
             <div className={styles.scheduleContainer}>
-                <h2>Сводный график работы</h2>
+                <h3>График работы мастеров</h3>
                 <table className={styles.scheduleGrid}>
-                    {/* ... (код <thead> и <tbody> без изменений) ... */}
                     <thead>
                         <tr>
                             <th>Мастер</th>
@@ -211,26 +270,6 @@ function AdminSchedule() {
                 </table>
             </div>
             
-            {/* --- НОВЫЙ КАЛЕНДАРЬ ЗАПИСЕЙ (Снизу) --- */}
-            <div className={styles.calendarContainer}>
-                <h2>Календарь записей</h2>
-                <Calendar
-                    localizer={localizer}
-                    events={appointments}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: 600 }} // Задаем высоту
-                    messages={messages} // Русификация
-                    onSelectEvent={handleSelectEvent} // Клик по записи
-                    defaultView="week" // Вид по умолчанию - неделя
-                    views={['month', 'week', 'day']} // Доступные виды
-                    step={30} // Шаг в 30 минут
-                    timeslots={2} // 2 слота в час
-                    min={new Date(0, 0, 0, 8, 0, 0)} // Начало рабочего дня (8:00)
-                    max={new Date(0, 0, 0, 21, 0, 0)} // Конец рабочего дня (21:00)
-                />
-            </div>
-            
             {/* --- МОДАЛЬНЫЕ ОКНА --- */}
             <ScheduleEditModal
                 isOpen={isScheduleModalOpen}
@@ -245,6 +284,12 @@ function AdminSchedule() {
                 onClose={() => setIsAppointmentModalOpen(false)}
                 onDelete={handleDeleteAppointment}
                 event={selectedAppointment}
+            />
+
+            <AdminBookingModal
+                isOpen={isAdminBookingModalOpen}
+                onClose={() => setIsAdminBookingModalOpen(false)}
+                onSave={handleAdminBookingSave}
             />
         </>
     );

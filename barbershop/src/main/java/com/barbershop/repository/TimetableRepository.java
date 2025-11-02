@@ -81,7 +81,7 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 
     @Query("SELECT MAX(t.appointmentTime) FROM Timetable t WHERE t.status = 'COMPLETED'")
     Optional<LocalDateTime> findMaxAppointmentTime();
-    List<Timetable> findByUserIdAndStatus(Long userId, BookingStatus status);
+    List<Timetable> findByBookedByIdAndStatus(Long userId, BookingStatus status);
 
-    List<Timetable> findByUserIdAndStatusAndAppointmentTimeAfter(Long userId, BookingStatus status, LocalDateTime time);
+    List<Timetable> findByBookedByIdAndStatusAndAppointmentTimeAfter(Long userId, BookingStatus status, LocalDateTime time);
 }

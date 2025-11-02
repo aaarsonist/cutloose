@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.HashSet;
+import java.util.UUID;
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -24,13 +26,28 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
-    @Override
-    public boolean authenticate(String username, String password) {
-        // теперь не используется напрямую
-        throw new UnsupportedOperationException("Аутентификация через Spring Security");
-    }
-
     public User findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+    @Override
+    public User findOrCreateGuestUser(String email, String name) {
+        // 1. Пытаемся найти пользователя по email (который у вас = username)
+        User existingUser = userRepository.findByUsername(email);
+        if (existingUser != null) {
+            return existingUser; // Нашли, возвращаем
+        }
+
+        // 2. Если не нашли - создаем нового "гостя"
+        User newGuest = new User();
+        newGuest.setUsername(email); // email = username
+        newGuest.setName(name);
+
+        // 4. Генерируем случайный, никому не известный пароль-заглушку
+        // (Это нужно, т.к. поле 'password' в User.java @Column(nullable = false))
+        String randomPassword = UUID.randomUUID().toString();
+        newGuest.setPassword(passwordEncoder.encode(randomPassword));
+
+        // 5. Сохраняем и возвращаем
+        return userRepository.save(newGuest);
     }
 }

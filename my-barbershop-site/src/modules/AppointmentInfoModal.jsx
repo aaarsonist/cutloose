@@ -13,11 +13,10 @@ function AppointmentInfoModal({ isOpen, onClose, onDelete, event }) {
         });
     };
 
-    // --- НОВАЯ ЛОГИКА ---
-    // event.start - это объект Date, который мы создадим в AdminSchedule.jsx
-    // new Date() - это текущее время
+    // --- ВАША ЛОГИКА ---
+    // event.start - это объект Date
     const isPast = event.start < new Date();
-    // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+    // --- КОНЕЦ ЛОГИКИ ---
     
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
@@ -46,15 +45,13 @@ function AppointmentInfoModal({ isOpen, onClose, onDelete, event }) {
                 <div className={styles.modalButtons}>
                     <button onClick={onClose} className={styles.cancelButton}>Закрыть</button>
                     
-                    {/* --- ИЗМЕНЕНИЯ КНОПКИ --- */}
                     <button 
                         onClick={() => onDelete(event.id)} 
-                        className={styles.deleteButton} // Используем красный стиль
+                        className={styles.deleteButton} // Красный стиль
                         disabled={isPast} // Отключаем, если запись в прошлом
                     >
                         {isPast ? "Запись прошла" : "Отменить запись"}
                     </button>
-                    {/* --- КОНЕЦ ИЗМЕНЕНИЙ --- */}
                 </div>
             </div>
         </div>
