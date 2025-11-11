@@ -19,7 +19,7 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     @Query("SELECT DATE(t.appointmentTime), s.name, COUNT(t) FROM Timetable t JOIN t.service s " +
             "WHERE t.status = com.barbershop.model.BookingStatus.COMPLETED " +
             "AND (:startDate IS NULL OR t.appointmentTime >= :startDate) AND (:endDate IS NULL OR t.appointmentTime <= :endDate) AND (:serviceIds IS NULL OR s.id IN :serviceIds) " +
-            "AND (:masterIds IS NULL OR m.id IN :masterIds)" +
+            "AND (:masterIds IS NULL OR t.master.id IN :masterIds)" +
             "GROUP BY DATE(t.appointmentTime), s.name ORDER BY DATE(t.appointmentTime) ASC, s.name ASC")
     List<Object[]> countVisitsByDayAndService(
             @Param("startDate") LocalDateTime startDate,

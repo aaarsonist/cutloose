@@ -21,7 +21,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             "AND (:startDate IS NULL OR r.appointment.appointmentTime >= :startDate) " +
             "AND (:endDate IS NULL OR r.appointment.appointmentTime <= :endDate) " +
             "AND (:serviceIds IS NULL OR r.appointment.service.id IN :serviceIds) " +
-            "AND (:masterIds IS NULL OR m.id IN :masterIds)" +
+            "AND (:masterIds IS NULL OR r.appointment.master.id IN :masterIds)" +
             "GROUP BY r.appointment.service.id, r.appointment.service.name")
     List<Object[]> findAverageRatingByServiceWithinPeriod(
             @Param("startDate") LocalDateTime startDate,
