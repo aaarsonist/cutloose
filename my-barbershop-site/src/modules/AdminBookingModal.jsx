@@ -145,24 +145,28 @@ function AdminBookingModal({ isOpen, onClose, onSave }) {
                     
                     {/* Блок доступных слотов */}
                     <label>Доступное время:</label>
-                    <div className={styles.slotContainer}>
-                        {isLoadingSlots ? (
-                            <p>Загрузка слотов...</p>
-                        ) : availableSlots.length > 0 ? (
-                            availableSlots.map(slot => (
-                                <button 
-                                    key={slot}
-                                    onClick={() => setSelectedSlot(slot)}
-                                    // Стиль "активной" кнопки, если слот выбран
-                                    className={`${styles.slotButton} ${selectedSlot === slot ? styles.active : ''}`}
-                                >
-                                    {slot}
-                                </button>
-                            ))
-                        ) : (
-                            <p>(Нет доступных слотов на эту дату)</p>
-                        )}
-                    </div>
+                    <div className={styles.timeSlotsContainer}> 
+                    {isLoadingSlots ? (
+                        <p>Загрузка слотов...</p>
+                    ) : availableSlots.length > 0 ? (
+                        availableSlots.map(slot => (
+                            <button 
+                                key={slot}
+                                // Используем вашу функцию setSelectedSlot
+                                onClick={() => setSelectedSlot(slot)} 
+                                
+                                /* Используем классы .timeSlotButton (базовый) 
+                                   и .selected (активный), как в CSS
+                                */
+                                className={`${styles.timeSlotButton} ${selectedSlot === slot ? styles.selected : ''}`}
+                            >
+                                {slot}
+                            </button>
+                        ))
+                    ) : (
+                        <p>(Нет доступных слотов на эту дату)</p>
+                    )}
+                </div>
                 </div>
 
                 <div className={styles.modalButtons}>

@@ -80,17 +80,6 @@ textarea {
     margin-right: 0; 
 }
 
-.selectedRating {
-    margin-left: 10px; 
-    font-weight: bold;
-    color: #555;
-}
-
-.star[style*="not-allowed"] {
-    cursor: not-allowed !important; 
-    opacity: 0.6;
-}
-
 .upcomingAppointmentsSection {
     margin-top: 30px;
     margin-bottom: 30px;
@@ -102,7 +91,7 @@ textarea {
 }
 
 .appointmentItem {
-    font-family: 'Mulish', sans-serif; /* <-- Вот твой шрифт */
+    font-family: 'Mulish', sans-serif;
     font-size: 16px;
     background-color: #f9f9f9;
     border: 1px solid #eee;
@@ -112,7 +101,7 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* Для мобильных */
+    flex-wrap: wrap;
 }
 
 .appointmentDetails {
@@ -179,7 +168,7 @@ textarea {
 
 /* Стиль для ВЫБРАННОГО слота */
 .slotButton.selectedSlot {
-  background-color: rgb(222, 89, 1); /* Твой фирменный цвет */
+  background-color: rgb(222, 89, 1);
   color: white;
   border-color: rgb(222, 89, 1);
   font-weight: bold;
