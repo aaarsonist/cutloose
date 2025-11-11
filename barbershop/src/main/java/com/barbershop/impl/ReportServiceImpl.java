@@ -41,7 +41,6 @@ public class ReportServiceImpl implements ReportService {
         this.timetableRepository = timetableRepository;
         this.reviewRepository = reviewRepository;
     }
-
     @Override
     public PerformanceReportDto getPerformanceReport(LocalDateTime startDate, LocalDateTime endDate, String reportType, List<Long> serviceIds, List<Long> masterIds) {
         PerformanceReportDto report = new PerformanceReportDto();
@@ -50,11 +49,11 @@ public class ReportServiceImpl implements ReportService {
         report.setEndDate(endDate);
 
         if ("services".equals(reportType)) {
-            report.setServiceReportData(getServicePerformanceReportData(startDate, endDate, serviceIds));
+            report.setServiceReportData(getServicePerformanceReportData(startDate, endDate, serviceIds, masterIds));
         }
         if ("masters".equals(reportType)) {
             System.out.println(">>> DEBUG: ReportServiceImpl calling getMasterPerformanceReportData with startDate: " + startDate + ", endDate: " + endDate + ", masterIds: " + masterIds);
-            report.setMasterReportData(getMasterPerformanceReportData(startDate, endDate, masterIds));
+            report.setMasterReportData(getMasterPerformanceReportData(startDate, endDate, masterIds, serviceIds));
         }
         else if ("sales".equals(reportType)) { // *** ДОБАВЛЕНО: Обработка типа "sales" ***
             System.out.println(">>> DEBUG: ReportServiceImpl calling getSalesReportData with startDate: " + startDate + ", endDate: " + endDate + ", serviceIds: " + serviceIds + ", masterIds: " + masterIds);
@@ -63,9 +62,9 @@ public class ReportServiceImpl implements ReportService {
         return report;
     }
 
-    private ServiceReportDataDto getServicePerformanceReportData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds) {
+    private ServiceReportDataDto getServicePerformanceReportData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds, List<Long> masterIds) {
         ServiceReportDataDto serviceReportData = new ServiceReportDataDto();
-        List<Object[]> visitCountsRaw = timetableRepository.countVisitsByDayAndService(startDate, endDate, serviceIds);
+        List<Object[]> visitCountsRaw = timetableRepository.countVisitsByDayAndService(startDate, endDate, serviceIds, masterIds);
 
         Map<LocalDate, List<Object[]>> visitsByDate = visitCountsRaw.stream()
                 .collect(Collectors.groupingBy(
@@ -93,7 +92,7 @@ public class ReportServiceImpl implements ReportService {
 
         serviceReportData.setVisitData(visitDataPoints);
 
-        List<Object[]> averageRatingsData = reviewRepository.findAverageRatingByServiceWithinPeriod(startDate, endDate, serviceIds); // <-- Вызов репозитория с фильтрами
+        List<Object[]> averageRatingsData = reviewRepository.findAverageRatingByServiceWithinPeriod(startDate, endDate, serviceIds, masterIds); // <-- Вызов репозитория с фильтрами
 
         List<AverageRatingDto> averageRatings = averageRatingsData.stream()
                 .map(row -> {
@@ -110,12 +109,13 @@ public class ReportServiceImpl implements ReportService {
         return serviceReportData;
     }
 
-    private MasterReportDataDto getMasterPerformanceReportData(LocalDateTime startDate, LocalDateTime endDate, List<Long> masterIds) {
-        List<Object[]> countDataRaw = timetableRepository.countAppointmentsByMaster(startDate, endDate, masterIds);
+    private MasterReportDataDto getMasterPerformanceReportData(LocalDateTime startDate, LocalDateTime endDate, List<Long> masterIds, List<Long> serviceIds) {
+        if (serviceIds != null && serviceIds.isEmpty()) serviceIds = null;
+        List<Object[]> countDataRaw = timetableRepository.countAppointmentsByMaster(startDate, endDate, masterIds, serviceIds);
 
-        List<Object[]> revenueDataRaw = timetableRepository.sumServicePricesByMaster(startDate, endDate, masterIds);
+        List<Object[]> revenueDataRaw = timetableRepository.sumServicePricesByMaster(startDate, endDate, masterIds, serviceIds);
 
-        List<Object[]> ratingDataRaw = reviewRepository.findAverageRatingByMasterWithinPeriod(startDate, endDate, masterIds);
+        List<Object[]> ratingDataRaw = reviewRepository.findAverageRatingByMasterWithinPeriod(startDate, endDate, masterIds, serviceIds);
 
         Map<Long, MasterPerformanceDataDto> masterDataMap = new HashMap<>();
 
@@ -215,16 +215,15 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ServiceReportDataDto getServiceData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds) {
+    public ServiceReportDataDto getServiceData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds, List<Long> masterIds) {
         // Просто вызываем ваш существующий приватный метод
         // Обратите внимание: ваш метод не принимал masterIds, и я это уважаю
-        return getServicePerformanceReportData(startDate, endDate, serviceIds);
+        return getServicePerformanceReportData(startDate, endDate, serviceIds, masterIds);
     }
 
     @Override
-    public MasterReportDataDto getMasterData(LocalDateTime startDate, LocalDateTime endDate, List<Long> masterIds) {
-        // Просто вызываем ваш существующий приватный метод
-        // Обратите внимание: ваш метод не принимал serviceIds, и я это уважаю
-        return getMasterPerformanceReportData(startDate, endDate, masterIds);
+    public MasterReportDataDto getMasterData(LocalDateTime startDate, LocalDateTime endDate, List<Long> masterIds, List<Long> serviceIds) {
+        // Вызываем приватный метод, передавая serviceIds
+        return getMasterPerformanceReportData(startDate, endDate, masterIds, serviceIds);
     }
 }

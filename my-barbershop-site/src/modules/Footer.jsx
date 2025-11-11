@@ -18,7 +18,7 @@ const Footer = () => {
                 </div>
                 <div className={styles.infoItem}>
                     <p className={styles.infoText}>
-                        г. Минск, ул. Рыбалко, 11
+                        г. Минск, пр. Машерова, 54
                     </p>
                 </div>
             </div>

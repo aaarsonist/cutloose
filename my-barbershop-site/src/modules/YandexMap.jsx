@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import styles from './YandexMap.module.css';
 
-const barbershopLocation = [53.887364, 27.594215]; 
+const barbershopLocation = [53.917914, 27.558085]; 
 
 export default function YandexMap() { 
   const mapRef = useRef(null); 
@@ -29,8 +29,8 @@ export default function YandexMap() {
             myMapInstance = new window.ymaps.Map(mapContainer, mapState, mapOptions);
 
             const placemark = new window.ymaps.Placemark(barbershopLocation, {
-                hintContent: 'Парикмахерская CutLoose',
-                balloonContent: 'Добро пожаловать в нашу парикмахерскую!'
+                hintContent: 'Салон красоты CutLoose',
+                balloonContent: 'Добро пожаловать в наш салон красоты!'
             });
 
             myMapInstance.geoObjects.add(placemark);

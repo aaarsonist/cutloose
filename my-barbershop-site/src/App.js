@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-//import axios from 'axios';
 import api from './api/api';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Services from './components/Services';
@@ -25,13 +24,11 @@ function LoginRouteHandler({ children }) {
       return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/user'} replace />; 
   }
 
-  // Если пользователя нет в localStorage, отображаем страницу входа
   console.log("User not found in localStorage, rendering LoginPage"); 
   return <LoginPage />;
 }
 
 function App() {
-  // при старте приложения подтягиваем сессию, если есть
   useEffect(() => {
     api.get('/api/users/current')
        .then(resp => localStorage.setItem('currentUser', JSON.stringify(resp.data)))

@@ -21,11 +21,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             "AND (:startDate IS NULL OR r.appointment.appointmentTime >= :startDate) " +
             "AND (:endDate IS NULL OR r.appointment.appointmentTime <= :endDate) " +
             "AND (:serviceIds IS NULL OR r.appointment.service.id IN :serviceIds) " +
+            "AND (:masterIds IS NULL OR m.id IN :masterIds)" +
             "GROUP BY r.appointment.service.id, r.appointment.service.name")
     List<Object[]> findAverageRatingByServiceWithinPeriod(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("serviceIds") List<Long> serviceIds
+            @Param("serviceIds") List<Long> serviceIds,
+            @Param("masterIds") List<Long> masterIds
     );
 
     @Query("SELECT r.appointment.master.id, m.name, AVG(r.rating) FROM Review r JOIN r.appointment a JOIN a.master m " +
@@ -34,11 +36,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             "AND (:startDate IS NULL OR a.appointmentTime >= :startDate) " +
             "AND (:endDate IS NULL OR a.appointmentTime <= :endDate) " +
             "AND (:masterIds IS NULL OR m.id IN :masterIds) " +
+            "AND (:serviceIds IS NULL OR a.service.id IN :serviceIds)" +
             "GROUP BY r.appointment.master.id, m.name")
     List<Object[]> findAverageRatingByMasterWithinPeriod(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("masterIds") List<Long> masterIds
+            @Param("masterIds") List<Long> masterIds,
+            @Param("serviceIds") List<Long> serviceIds
     );
 
     @Override

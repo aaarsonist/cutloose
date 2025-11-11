@@ -46,9 +46,9 @@ export default function SalonHeader() {
         <div className={`${styles.icon} ${styles.locationIcon}`} aria-hidden="true" />
         </div>
         <address className={styles.address}>
-        г. Минск <br />улица Рыбалко, 11
+        г. Минск <br />пр. Машерова, 54
         </address>
-        <p className={styles.descriptionAdress}>Вход со двора</p>
+        <p className={styles.descriptionAdress}>Вход со стороны ул. Кропоткина</p>
     </div>
 
     <div className={styles.card}>

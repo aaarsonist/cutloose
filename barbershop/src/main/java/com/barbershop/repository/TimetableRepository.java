@@ -19,31 +19,37 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     @Query("SELECT DATE(t.appointmentTime), s.name, COUNT(t) FROM Timetable t JOIN t.service s " +
             "WHERE t.status = com.barbershop.model.BookingStatus.COMPLETED " +
             "AND (:startDate IS NULL OR t.appointmentTime >= :startDate) AND (:endDate IS NULL OR t.appointmentTime <= :endDate) AND (:serviceIds IS NULL OR s.id IN :serviceIds) " +
+            "AND (:masterIds IS NULL OR m.id IN :masterIds)" +
             "GROUP BY DATE(t.appointmentTime), s.name ORDER BY DATE(t.appointmentTime) ASC, s.name ASC")
     List<Object[]> countVisitsByDayAndService(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("serviceIds") List<Long> serviceIds
+            @Param("serviceIds") List<Long> serviceIds,
+            @Param("masterIds") List<Long> masterIds
     );
 
     @Query("SELECT t.master.id, m.name, COUNT(t) FROM Timetable t JOIN t.master m " +
             "WHERE t.status = com.barbershop.model.BookingStatus.COMPLETED " +
             "AND (:startDate IS NULL OR t.appointmentTime >= :startDate) AND (:endDate IS NULL OR t.appointmentTime <= :endDate) AND (:masterIds IS NULL OR m.id IN :masterIds) " +
+            "AND (:serviceIds IS NULL OR t.service.id IN :serviceIds)" +
             "GROUP BY t.master.id, m.name")
     List<Object[]> countAppointmentsByMaster(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("masterIds") List<Long> masterIds
+            @Param("masterIds") List<Long> masterIds,
+            @Param("serviceIds") List<Long> serviceIds
     );
 
     @Query("SELECT t.master.id, m.name, SUM(t.service.price) FROM Timetable t JOIN t.master m JOIN t.service s " +
             "WHERE t.status = com.barbershop.model.BookingStatus.COMPLETED " +
             "AND (:startDate IS NULL OR t.appointmentTime >= :startDate) AND (:endDate IS NULL OR t.appointmentTime <= :endDate) AND (:masterIds IS NULL OR m.id IN :masterIds) " +
+            "AND (:serviceIds IS NULL OR s.id IN :serviceIds)" +
             "GROUP BY t.master.id, m.name")
     List<Object[]> sumServicePricesByMaster(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("masterIds") List<Long> masterIds
+            @Param("masterIds") List<Long> masterIds,
+            @Param("serviceIds") List<Long> serviceIds
     );
 
     @Query("SELECT CAST(t.appointmentTime as date), SUM(t.service.price) FROM Timetable t JOIN t.service s JOIN t.master m " +
