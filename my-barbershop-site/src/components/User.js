@@ -1,8 +1,8 @@
 import React from 'react';
 import '../App.css';
-import Navigation from '../modules/Navigation';
-import UserDashboard from '../modules/UserDashboard';
-import Footer from '../modules/Footer';
+import Navigation from './Navigation/Navigation';
+import UserDashboard from './pages/User/UserDashboard';
+import Footer from './Footer/Footer';
 
 function User(){
     return(

@@ -1,9 +1,9 @@
 import React from 'react';
 import '../App.css';
-import Navigation from '../modules/Navigation';
-import Men from '../modules/Men';
-import Women from '../modules/Women';
-import Footer from '../modules/Footer';
+import Navigation from './Navigation/Navigation';
+import Men from './pages/Public/Men';
+import Women from './pages/Public/Women';
+import Footer from './Footer/Footer';
 
 function Services(){
     return (

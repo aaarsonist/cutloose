@@ -1,8 +1,8 @@
 import React from 'react';
 import '../App.css';
-import Navigation from '../modules/Navigation';
-import Footer from '../modules/Footer';
-import Register from '../modules/Register';
+import Navigation from './Navigation/Navigation';
+import Footer from './Footer/Footer';
+import Register from './pages/Auth/Register';
 
 function RegisterPage(){
     return (

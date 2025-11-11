@@ -3,7 +3,7 @@
     import { Link, useNavigate } from "react-router-dom";  
     import axios from "axios";
     import styles from './Login.module.css';
-    import api from '../api/api';
+    import api from '../../../api/api';
 
     function Register() {
         const {

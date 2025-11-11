@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom'
 import styles from './SalonHeader.module.css';
-import mainPicture from '../images/mainPicture.png';
-import YandexMap from './YandexMap';
+import mainPicture from '../../../images/mainPicture.png';
+import YandexMap from '../../YandexMap/YandexMap';
 
 export default function SalonHeader() {
   return (

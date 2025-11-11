@@ -1,8 +1,8 @@
 import React from 'react';
 import '../App.css';
-import Navigation from '../modules/Navigation';
-import SalonHeader from '../modules/SalonHeader';
-import Footer from '../modules/Footer';
+import Navigation from './Navigation/Navigation';
+import SalonHeader from './pages/Public/SalonHeader';
+import Footer from './Footer/Footer';
 
 function Home(){
     return(

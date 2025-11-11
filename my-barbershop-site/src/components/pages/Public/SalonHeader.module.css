@@ -165,15 +165,15 @@
 }
 
 .phoneIcon {
-  background-image: url('../images/phone.png');
+  background-image: url('../../../images/phone.png');
 }
 
 .locationIcon {
-  background-image: url('../images/location1.png');
+  background-image: url('../../../images/location1.png');
 }
 
 .hoursIcon {
-  background-image: url('../images/clock.png');
+  background-image: url('../../../images/clock.png');
 }
 
 .phoneNumber {

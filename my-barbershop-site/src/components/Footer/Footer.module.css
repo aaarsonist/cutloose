@@ -71,11 +71,11 @@
 }
 
 .phoneIcon {
-    background-image: url('../images/phone.png');
+    background-image: url('../../images/phone.png');
 }
 
 .clockIcon {
-    background-image: url('../images/clock.png');
+    background-image: url('../../images/clock.png');
 }
 
 .contactText {

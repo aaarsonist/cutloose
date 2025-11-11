@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './AdminDashboard.module.css'; // Используем общие стили
-import api from '../api/api'; // Импортируем наш API
+import api from '../../../api/api'; // Импортируем наш API
 
 function AdminBookingModal({ isOpen, onClose, onSave }) {
     // 1. Состояния для данных формы

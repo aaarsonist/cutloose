@@ -1,8 +1,8 @@
 import React from 'react';
 import '../App.css';
-import Navigation from '../modules/Navigation';
-import AdminDashboard from '../modules/AdminDashboard';
-import Footer from '../modules/Footer';
+import Navigation from './Navigation/Navigation';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import Footer from './Footer/Footer';
 
 function Admin(){
     return(

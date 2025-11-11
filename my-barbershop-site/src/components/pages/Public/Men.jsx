@@ -2,18 +2,18 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import styles from "./PricingSection.module.css";
-import women from "../images/women.png";
+import men from "../../../images/men.png";
 
-function Women() {
+function Men() {
   const [services, setServices] = useState([]);
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/services/women"); 
+        const response = await axios.get("http://localhost:8080/services/men"); 
         setServices(response.data); 
       } catch (error) {
-        console.error("Ошибка при загрузке услуг:", error);
+        console.error("Ошибка при загрузке мужских услуг:", error);
       }
     };
 
@@ -22,12 +22,12 @@ function Women() {
 
   return (
     <section className={styles.pricingSection}>
-      <h2 className={styles.sectionTitle}>Женский зал</h2>
+      <h2 className={styles.sectionTitle}>Мужской зал</h2>
       <div className={styles.pricingContainer}>
         <div className={styles.imageColumn}>
           <img
             loading="lazy"
-            src={women}
+            src={men}
             className={styles.serviceImage}
             alt="Barbershop services illustration"
           />
@@ -52,4 +52,4 @@ function Women() {
   );
 }
 
-export default Women;
+export default Men;

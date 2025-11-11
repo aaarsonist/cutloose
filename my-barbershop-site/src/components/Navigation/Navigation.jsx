@@ -1,8 +1,8 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import styles from "./Navigation.module.css";
-import logo from "../images/logo.png";
-import api from '../api/api';
+import logo from "../../images/logo.png";
+import api from '../../api/api';
 
 const Navigation = () => {
   const location = useLocation(); 
