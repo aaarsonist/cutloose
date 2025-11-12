@@ -1,19 +1,21 @@
-import React, { useEffect, useState, useCallback } from 'react'; 
+import React, { useEffect, useState, useCallback, useRef } from 'react'; 
 import api from '../../../api/api';
 import styles from './AdminDashboard.module.css'; 
 
 import Range from 'rc-slider'; 
 import 'rc-slider/assets/index.css'; 
 
-// --- ВАЖНО: Добавляем LineElement и PointElement для Line-графика ---
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2'; 
 import Select from 'react-select';
 
-// Регистрация Chart.js (без изменений)
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import moment from 'moment';
+import '../../../assets/fonts/Mulish-Regular-normal.js';
+
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
 
-// ... (Ваши вспомогательные функции: formatLocalDate, renderStars, formatCurrency, toInputFormat, toLabelFormat) ...
 const formatLocalDate = (localDate) => {
     if (!localDate) return '';
     if (Array.isArray(localDate)) { 
@@ -51,19 +53,16 @@ const toLabelFormat = (timestamp) => {
 };
 
 
-// --- КОНСТАНТЫ ДЛЯ СЛАЙДЕРА (без изменений) ---
 const TODAY_TS = Date.now();
 const ONE_YEAR_AGO_TS = new Date(new Date().setFullYear(new Date().getFullYear() - 1)).getTime();
 const ONE_MONTH_AGO_TS = new Date(new Date().setMonth(new Date().getMonth() - 1)).getTime();
 
 
 function AdminAnalytics() {
-    // --- Состояния ---
     const [salesData, setSalesData] = useState(null); 
     const [serviceData, setServiceData] = useState(null);
     const [masterData, setMasterData] = useState(null); 
     
-    // --- НОВОЕ СОСТОЯНИЕ ДЛЯ ПРОГНОЗА ---
     const [forecastData, setForecastData] = useState([]);
     
     const [sliderValues, setSliderValues] = useState([ONE_MONTH_AGO_TS, TODAY_TS]);
@@ -75,7 +74,9 @@ function AdminAnalytics() {
     const [masterOptions, setMasterOptions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // --- Загрузка списков для фильтров (без изменений) ---
+    const revenueChartRef = useRef(null);
+    const visitChartRef = useRef(null);
+
     useEffect(() => {
         const fetchFilterOptions = async () => {
             try {
@@ -92,7 +93,6 @@ function AdminAnalytics() {
         fetchFilterOptions();
     }, []);
 
-    // --- Загрузка данных дашборда (без изменений) ---
     const fetchDashboardData = useCallback(async () => {
         setIsLoading(true);
 
@@ -121,18 +121,17 @@ function AdminAnalytics() {
         };
 
         try {
-            // --- ИЗМЕНЕНИЕ: Добавляем 4-й запрос ---
             const [ salesRes, serviceRes, masterRes, forecastRes ] = await Promise.all([
                 api.get('/api/reports/sales', config), 
                 api.get('/api/reports/services', config), 
                 api.get('/api/reports/masters', config),
-                api.get('/api/forecast/weekly') // Запрос прогноза
+                api.get('/api/forecast/weekly') 
             ]);
 
             setSalesData(salesRes.data);
             setServiceData(serviceRes.data);
             setMasterData(masterRes.data);
-            setForecastData(forecastRes.data); // Сохраняем данные прогноза
+            setForecastData(forecastRes.data); 
 
         } catch (error) {
             console.error("Ошибка при загрузке данных дашборда:", error);
@@ -140,14 +139,12 @@ function AdminAnalytics() {
         } finally {
             setIsLoading(false);
         }
-    }, [startDate, endDate, selectedServices, selectedMasters]); // Зависимости не изменились
+    }, [startDate, endDate, selectedServices, selectedMasters]); 
 
-    // --- useEffect для загрузки (без изменений) ---
     useEffect(() => {
         fetchDashboardData();
     }, [fetchDashboardData]); 
 
-    // --- Обработчик слайдера (без изменений) ---
     const handleSliderStop = (values) => {
         if (!values || typeof values[0] !== 'number' || typeof values[1] !== 'number') {
             console.error("handleSliderStop: получены неверные значения", values);
@@ -159,7 +156,6 @@ function AdminAnalytics() {
         setEndDate(newEndDate);
     };
 
-    // --- Опции и данные для графиков (без изменений) ---
     const chartOptions = (title) => ({
         responsive: true,
         maintainAspectRatio: false,
@@ -190,21 +186,20 @@ function AdminAnalytics() {
         }],
     };
     
-    // --- НОВЫЙ ГРАФИК: ДАННЫЕ ДЛЯ ПРОГНОЗА ---
     const forecastChartData = {
         labels: forecastData.map(d => d.dayOfWeekRussian), 
         datasets: [
             {
-                label: 'Предложение (часы)',
+                label: 'Предложение',
                 data: forecastData.map(d => d.supplyHours.toFixed(1)),
-                backgroundColor: 'rgba(54, 162, 235, 0.6)', // Синий
+                backgroundColor: 'rgba(54, 162, 235, 0.6)', 
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1,
             },
             {
-                label: 'Спрос (сред. часы)',
+                label: 'Прогноз спроса',
                 data: forecastData.map(d => d.demandHours.toFixed(1)),
-                backgroundColor: 'rgba(255, 159, 64, 0.6)', // Оранжевый
+                backgroundColor: 'rgba(255, 159, 64, 0.6)', 
                 borderColor: 'rgba(255, 159, 64, 1)',
                 borderWidth: 1,
             }
@@ -215,7 +210,7 @@ function AdminAnalytics() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { position: 'top' }, // Включаем легенду
+            legend: { position: 'top' }, 
             title: { display: false },
         },
         scales: { 
@@ -225,12 +220,128 @@ function AdminAnalytics() {
             } 
         }
     };
+const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    let y = 20; 
+
+    doc.setFont('Mulish', 'normal');
+
+    doc.setFontSize(18);
+    doc.text("Отчет по работе салона красоты CutLoose", 14, y);
+    y += 15;
+
+    doc.setFontSize(12);
+    doc.text("Параметры отчета:", 14, y);
+    y += 7;
+
+    doc.setFontSize(10);
+    const dateRangeStr = `Диапазон дат: ${moment(startDate).format('DD.MM.YYYY')} - ${moment(endDate).format('DD.MM.YYYY')}`;
+    doc.text(dateRangeStr, 14, y);
+    y += 7;
+
+    let mastersStr = "Мастера: ";
+    if (selectedMasters.length === 0) {
+        mastersStr += "Все мастера";
+    } else {
+        mastersStr += selectedMasters.map(selected => 
+            masterOptions.find(opt => opt.value === selected.value)?.label
+        ).join(', ');
+    }
+    doc.text(mastersStr, 14, y);
+    y += 7;
+
+    let servicesStr = "Услуги: ";
+    if (selectedServices.length === 0) {
+        servicesStr += "Все услуги";
+    } else {
+        servicesStr += selectedServices.map(selected => 
+            serviceOptions.find(opt => opt.value === selected.value)?.label
+        ).join(', ');
+    }
+    doc.text(servicesStr, 14, y);
+    y += 15;
+
+    if (revenueChartRef.current) {
+        const revenueImg = revenueChartRef.current.toBase64Image();
+        doc.setFontSize(14);
+        doc.text("Динамика выручки (BYN)", 14, y);
+        y += 5;
+        doc.addImage(revenueImg, 'PNG', 14, y, 180, 90);
+        y += 100;
+    }
+
+    if (visitChartRef.current) {
+        const visitImg = visitChartRef.current.toBase64Image();
+        doc.setFontSize(14);
+        doc.text("Динамика посещений (кол-во)", 14, y);
+        y += 5;
+        doc.addImage(visitImg, 'PNG', 14, y, 180, 90);
+        y += 100;
+    }
+
+    if (y > 250) {
+        doc.addPage();
+        y = 20;
+    }
+
+    const tableStyles = {
+        font: 'Mulish',
+        fontStyle: 'normal'
+    };
+
+    if (masterData && masterData.masterPerformanceData.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Эффективность мастеров", 14, y);
+        y += 10;
+
+        const masterHead = [['Мастер', 'Записей', 'Выручка', 'Сред. оценка']];
+        const masterBody = masterData.masterPerformanceData.map(m => [
+            m.masterFullName,
+            m.appointmentCount,
+            formatCurrency(m.totalRevenue), 
+            m.averageRating ? m.averageRating.toFixed(1) : 'N/A'
+        ]);
+
+        autoTable(doc, {
+            startY: y,
+            head: masterHead,
+            body: masterBody,
+            theme: 'grid',
+            styles: tableStyles 
+        });
+        y = doc.lastAutoTable.finalY + 15;
+    }
+
+    if (serviceData && serviceData.averageRatings.length > 0) {
+        if (y > 250) {
+            doc.addPage();
+            y = 20;
+        }
+        doc.setFontSize(14);
+        doc.text("Средние оценки услуг", 14, y); 
+        y += 10;
+
+        const serviceHead = [['Услуга', 'Сред. оценка']];
+        const serviceBody = serviceData.averageRatings.map(s => [
+            s.serviceName,
+            s.averageRating ? `${s.averageRating.toFixed(1)} ${renderStars(s.averageRating)}` : 'N/A' 
+        ]);
+
+        autoTable(doc, {
+            startY: y,
+            head: serviceHead,
+            body: serviceBody,
+            theme: 'grid',
+            styles: tableStyles
+        });
+    }
+
+    doc.save(`analytics_report_${moment(startDate).format('YYYY-MM-DD')}.pdf`);
+};
     
-    // --- JSX Рендеринг ---
     return (
         <div className={styles.analyticsPage}>
             
-            {/* --- ФИЛЬТРЫ (без изменений) --- */}
             <div className={styles.dateSliderBar}>
                 <span className={styles.sliderLabel}>{toLabelFormat(sliderValues[0])}</span>
                 <div className={styles.sliderWrapper}>
@@ -262,21 +373,27 @@ function AdminAnalytics() {
                         className={styles.selectMulti} placeholder="Все мастера"
                     />
                 </div>
+
+                <button 
+                    onClick={handleDownloadPDF} 
+                    className={styles.pdfButton}
+                    disabled={isLoading}
+                >
+                {isLoading ? "Загрузка..." : "Отчет PDF"}
+                </button>
             </div>
 
-            {/* --- РЯДЫ ГРАФИКОВ И ТАБЛИЦ (без изменений) --- */}
             <div className={styles.dashboardGrid}>
                 <div className={styles.widget}>
-                    {salesData ? <Line options={chartOptions('Динамика выручки')} data={salesChart} /> : "Загрузка..."}
+                    {salesData ? <Line options={chartOptions('Динамика выручки')} data={salesChart} ref={revenueChartRef} /> : "Загрузка..."}
                 </div>
                 <div className={styles.widget}>
-                    {serviceData ? <Bar options={chartOptions('Динамика посещений')} data={serviceChart} /> : "Загрузка..."}
+                    {serviceData ? <Bar options={chartOptions('Динамика посещений')} data={serviceChart} ref={visitChartRef} /> : "Загрузка..."}
                 </div>
             </div>
             <div className={styles.dashboardGrid}>
                 <div className={styles.widget}>
                     <h3>Эффективность мастеров</h3>
-                    {/* ... (таблица masterData без изменений) ... */}
                     <div className={styles.tableContainer}>
                         <table>
                             <thead>
@@ -297,7 +414,6 @@ function AdminAnalytics() {
                 </div>
                 <div className={styles.widget}>
                     <h3>Средние оценки услуг</h3>
-                    {/* ... (таблица serviceData.averageRatings без изменений) ... */}
                     <div className={styles.tableContainer}>
                         <table>
                             <thead>
@@ -316,13 +432,10 @@ function AdminAnalytics() {
                 </div>
             </div>
 
-            
-            {/* --- НОВЫЙ БЛОК ПРОГНОЗИРОВАНИЯ --- */}
             <div className={styles.forecastSection}>
                 <h3>Прогноз спроса и рекомендации по оптимизации</h3>
                 
                 <div className={styles.dashboardGrid}>
-                    {/* Виджет для графика */}
                     <div className={styles.widget}>
                         <h3>Прогноз спроса vs предложение (в часах)</h3>
                         {forecastData.length > 0 ? (
@@ -332,7 +445,6 @@ function AdminAnalytics() {
                         ) : "Загрузка..."}
                     </div>
                     
-                    {/* Виджет для рекомендаций */}
                     <div className={styles.widget}>
                         <h3>Рекомендации по оптимизации</h3>
                         <ul className={styles.recommendationList}>

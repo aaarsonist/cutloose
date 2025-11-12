@@ -742,6 +742,29 @@
   border-color: #ff6600 !important;
 }
 
+/* === Стиль для кнопки PDF === */
+.pdfButton {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background-color: #f0a500; 
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-left: auto; 
+}
+
+.pdfButton:hover {
+    background-color: #ff6600;
+}
+
+.pdfButton:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+}
+
 /* 6. МЕДИА-ЗАПРОСЫ (Адаптивность) */
 
 @media (max-width: 900px) {
