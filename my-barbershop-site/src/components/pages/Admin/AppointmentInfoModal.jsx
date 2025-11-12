@@ -1,22 +1,18 @@
 import React from 'react';
-import styles from './AdminDashboard.module.css'; // Используем общие стили
+import styles from './AdminDashboard.module.css'; 
 
 function AppointmentInfoModal({ isOpen, onClose, onDelete, event }) {
     if (!isOpen || !event) {
-        return null; // Не рендерим, если закрыто
+        return null; 
     }
 
-    // Форматируем даты для отображения
     const formatEventDate = (date) => {
         return new Date(date).toLocaleString('ru-RU', {
             day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
         });
     };
 
-    // --- ВАША ЛОГИКА ---
-    // event.start - это объект Date
     const isPast = event.start < new Date();
-    // --- КОНЕЦ ЛОГИКИ ---
     
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
@@ -47,8 +43,8 @@ function AppointmentInfoModal({ isOpen, onClose, onDelete, event }) {
                     
                     <button 
                         onClick={() => onDelete(event.id)} 
-                        className={styles.deleteButton} // Красный стиль
-                        disabled={isPast} // Отключаем, если запись в прошлом
+                        className={styles.deleteButton} 
+                        disabled={isPast} 
                     >
                         {isPast ? "Запись прошла" : "Отменить запись"}
                     </button>

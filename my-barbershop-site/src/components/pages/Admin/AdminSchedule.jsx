@@ -2,22 +2,20 @@ import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../../api/api';
 import styles from './AdminDashboard.module.css'; 
 
-// --- НОВЫЕ ИМПОРТЫ ДЛЯ КАЛЕНДАРЯ ---
+import { toast } from 'react-toastify';
+
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import 'moment/locale/ru'; // Импортируем русскую локаль для moment
+import 'moment/locale/ru'; 
 
-// --- НОВЫЕ ИМПОРТЫ МОДАЛЬНЫХ ОКОН ---
-import ScheduleEditModal from './ScheduleEditModal'; // Ваше существующее окно
-import AppointmentInfoModal from './AppointmentInfoModal'; // Наше новое окно
+import ScheduleEditModal from './ScheduleEditModal'; 
+import AppointmentInfoModal from './AppointmentInfoModal'; 
 import AdminBookingModal from './AdminBookingModal';
 
-// Настраиваем локализацию для календаря
 moment.locale('ru');
 const localizer = momentLocalizer(moment);
 
-// Дни недели для сетки (без изменений)
 const DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 const DAY_NAMES_RU = {
     MONDAY: "Пн", TUESDAY: "Вт", WEDNESDAY: "Ср", THURSDAY: "Чт", FRIDAY: "Пт", SATURDAY: "Сб", SUNDAY: "Вс"
@@ -31,39 +29,33 @@ const formatTime = (timeString) => {
 
 
 function AdminSchedule() {
-    // --- Состояния для Сетки Графика (без изменений) ---
     const [masters, setMasters] = useState([]);
     const [schedules, setSchedules] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState(null); 
 
-    // --- НОВЫЕ СОСТОЯНИЯ ДЛЯ КАЛЕНДАРЯ ЗАПИСЕЙ ---
-    const [appointments, setAppointments] = useState([]); // Для данных из /api/timetable
+    const [appointments, setAppointments] = useState([]); 
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [isAdminBookingModalOpen, setIsAdminBookingModalOpen] = useState(false);
 
-    // 1. Загрузка ВСЕХ данных
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             const [mastersRes, schedulesRes, appointmentsRes] = await Promise.all([
                 api.get('/api/masters'),
                 api.get('/api/work-schedule/all'),
-                api.get('/api/timetable') // <-- Этот GET теперь возвращает DTO
+                api.get('/api/timetable') 
             ]);
             
             setMasters(mastersRes.data);
             setSchedules(schedulesRes.data);
             
             const calendarEvents = appointmentsRes.data.map(event => {
-                // event.start - это строка "2025-10-01T14:00:00"
-                // 1. Заменяем "T" на " ", чтобы new Date() распознал ее как ЛОКАЛЬНОЕ время
                 const localStartStr = event.start.replace('T', ' ');
                 const localEndStr = event.end.replace('T', ' ');
 
-                // 2. Создаем Date-объекты
                 return {
                     ...event,
                     start: new Date(localStartStr),
@@ -74,6 +66,7 @@ function AdminSchedule() {
             
         } catch (error) {
             console.error("Ошибка при загрузке данных графика:", error);
+            toast.error("Ошибка при загрузке данных графика.");
         } finally {
             setIsLoading(false);
         }
@@ -83,7 +76,6 @@ function AdminSchedule() {
         fetchData();
     }, [fetchData]);
 
-    // --- Обработчики Сетки Графика (без изменений) ---
     const findScheduleEntry = (masterId, dayOfWeek) => { 
         return schedules.find(s => s.master.id === masterId && s.dayOfWeek === dayOfWeek);
     };
@@ -98,6 +90,7 @@ function AdminSchedule() {
         }
         setIsScheduleModalOpen(true);
     };
+    
     const handleSaveSchedule = async (updatedEntry) => { 
         try {
             const response = await api.post('/api/work-schedule', updatedEntry);
@@ -123,61 +116,83 @@ function AdminSchedule() {
                     return prevSchedules; 
                 }
             });
+            toast.success('График успешно сохранен!'); 
         } catch (error) {
             console.error("Ошибка при сохранении графика:", error);
-            alert("Не удалось сохранить график.");
+            toast.error("Не удалось сохранить график."); 
         } finally {
             setIsScheduleModalOpen(false); 
         }
     };
 
-    // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ КАЛЕНДАРЯ ЗАПИСЕЙ ---
-    
-    // 5. Клик по событию в календаре
     const handleSelectEvent = (event) => {
         setSelectedAppointment(event); 
         setIsAppointmentModalOpen(true);
     };
 
-    // 6. "Отмена" (удаление) записи АДМИНИСТРАТОРОМ
-    const handleDeleteAppointment = async (id) => {
-        if (window.confirm('Вы уверены, что хотите отменить эту запись?')) {
-            try {
-                // --- ИЗМЕНЕНИЕ: Используем новый АДМИНСКИЙ эндпоинт ---
-                await api.delete(`/api/timetable/admin/${id}`);
-                
-                setAppointments(prev => prev.filter(app => app.id !== id));
-                setIsAppointmentModalOpen(false);
-                setSelectedAppointment(null);
-            } catch (error) {
-                console.error("Ошибка при отмене записи:", error);
-                if (error.response && error.response.status === 400) {
-                    alert("Не удалось отменить: эта запись уже в прошлом.");
-                } else {
-                    alert("Не удалось отменить запись.");
+    const handleDeleteAppointment = (id) => {
+        
+        const ConfirmationToast = ({ closeToast }) => {
+            const confirmAction = async () => {
+                try {
+                    await api.delete(`/api/timetable/admin/${id}`);
+                    
+                    setAppointments(prev => prev.filter(app => app.id !== id));
+                    setIsAppointmentModalOpen(false);
+                    setSelectedAppointment(null);
+                    
+                    toast.success('Запись успешно отменена.'); 
+
+                } catch (error) {
+                    console.error("Ошибка при отмене записи:", error);
+                    if (error.response && error.response.status === 400) {
+                        toast.error("Не удалось отменить: эта запись уже в прошлом.");
+                    } else {
+                        toast.error("Не удалось отменить запись.");
+                    }
                 }
-            }
-        }
+                closeToast();
+            };
+            const cancelAction = () => closeToast();
+
+            return (
+                <div>
+                    <p style={{ margin: 0, marginBottom: '10px', fontSize: '1rem' }}>
+                        Вы уверены, что хотите отменить эту запись?
+                    </p>
+                    <button onClick={confirmAction} className={styles.toastConfirmButton}>
+                        Да, отменить
+                    </button>
+                    <button onClick={cancelAction} className={styles.toastCancelButton}>
+                        Нет
+                    </button>
+                </div>
+            );
+        };
+        
+        toast.warn(<ConfirmationToast />, {
+            position: "top-right", 
+            autoClose: false, closeOnClick: false, draggable: false,
+            closeButton: false, theme: "light",
+            className: styles.confirmationToastBody
+        });
     };
 
     const handleAdminBookingSave = async (bookingRequest) => {
         try {
-            // Вызываем новый эндпоинт
             await api.post('/api/timetable/admin/book', bookingRequest);
             
-            alert('Клиент успешно записан!');
-            setIsAdminBookingModalOpen(false); // Закрываем модалку
+            toast.success('Клиент успешно записан!');
+            setIsAdminBookingModalOpen(false); 
             
-            // ПЕРЕЗАГРУЖАЕМ ВСЕ ДАННЫЕ (включая календарь)
             fetchData(); 
             
         } catch (error) {
             console.error("Ошибка при создании записи:", error);
-            alert("Не удалось создать запись. Возможно, слот уже занят.");
+            toast.error("Не удалось создать запись. Возможно, слот уже занят.");
         }
     };
     
-    // 7. Сообщения для календаря (на русском)
     const messages = {
         allDay: 'Весь день',
         previous: 'Назад',
@@ -200,7 +215,6 @@ function AdminSchedule() {
     return (
         <>
             <div className={styles.calendarContainer}>
-                {/* --- НОВЫЙ ЗАГОЛОВОК С КНОПКОЙ --- */}
                 <div className={styles.calendarHeader}>
                     <h3>Календарь записей</h3>
                     <button 
@@ -210,7 +224,6 @@ function AdminSchedule() {
                         + Записать клиента
                     </button>
                 </div>
-                {/* --- КОНЕЦ НОВОГО ЗАГОЛОВКА --- */}
                 
                 <Calendar
                     localizer={localizer}
@@ -265,7 +278,6 @@ function AdminSchedule() {
                 </table>
             </div>
             
-            {/* --- МОДАЛЬНЫЕ ОКНА --- */}
             <ScheduleEditModal
                 isOpen={isScheduleModalOpen}
                 onClose={() => setIsScheduleModalOpen(false)}

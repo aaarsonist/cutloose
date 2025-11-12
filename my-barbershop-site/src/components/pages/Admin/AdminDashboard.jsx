@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import styles from './AdminDashboard.module.css'; // Мы будем использовать тот же CSS-модуль
-import AdminAnalytics from './AdminAnalytics'; // Импортируем новый компонент для аналитики
-import AdminManagement from './AdminManagement'; // Импортируем новый компонент для управления
-import AdminSchedule from './AdminSchedule'; // Импортируем новый компонент для расписания
+import styles from './AdminDashboard.module.css'; 
+import AdminAnalytics from './AdminAnalytics'; 
+import AdminManagement from './AdminManagement'; 
+import AdminSchedule from './AdminSchedule'; 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function AdminDashboard() {
-  // 'analytics' - раздел по умолчанию, как вы и просили
   const [activeSection, setActiveSection] = useState('schedule');
 
   const renderSection = () => {
@@ -23,7 +24,12 @@ function AdminDashboard() {
 
   return (
     <div className={styles.adminContainer}>
-      {/* Боковая панель навигации */}
+      <ToastContainer 
+          position="bottom-right" 
+          autoClose={3000} 
+          newestOnTop
+          pauseOnHover
+      />
       <div className={styles.sidebar}>
         <h3>Панель администратора</h3>
         <button
@@ -46,7 +52,6 @@ function AdminDashboard() {
         </button>
       </div>
 
-      {/* Основной контент раздела */}
       <div className={styles.content}>
         {renderSection()}
       </div>

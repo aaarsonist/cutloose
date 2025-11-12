@@ -1,57 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import styles from './AdminDashboard.module.css'; // Используем общие стили
-import api from '../../../api/api'; // Импортируем наш API
+import styles from './AdminDashboard.module.css'; 
+import api from '../../../api/api'; 
+import { toast } from 'react-toastify';
 
 function AdminBookingModal({ isOpen, onClose, onSave }) {
-    // 1. Состояния для данных формы
     const [clientName, setClientName] = useState('');
     const [clientEmail, setClientEmail] = useState('');
     const [selectedService, setSelectedService] = useState('');
     const [selectedMaster, setSelectedMaster] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
     
-    // 2. Состояния для загрузки (списки и слоты)
     const [services, setServices] = useState([]);
     const [masters, setMasters] = useState([]);
     const [availableSlots, setAvailableSlots] = useState([]);
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     
-    // 3. Состояние для выбранного слота
-    const [selectedSlot, setSelectedSlot] = useState(null); // (e.g., "10:30")
+    const [selectedSlot, setSelectedSlot] = useState(null); 
 
-    // Загрузка списков Услуг и Мастеров при первом открытии
     useEffect(() => {
         if (isOpen) {
-            // Загружаем услуги
             api.get('/services')
                 .then(res => setServices(res.data))
                 .catch(err => console.error("Ошибка загрузки услуг:", err));
             
-            // Загружаем мастеров
             api.get('/api/masters')
                 .then(res => setMasters(res.data))
                 .catch(err => console.error("Ошибка загрузки мастеров:", err));
         }
-    }, [isOpen]); // Повторно загружать, если окно закрыли и открыли
+    }, [isOpen]); 
 
-    // Эффект для загрузки ДОСТУПНЫХ СЛОТОВ
-    // (Срабатывает, когда меняются 3 ключевых поля)
     useEffect(() => {
-        // Сбрасываем слоты, если одно из полей пустое
         if (!selectedService || !selectedMaster || !selectedDate) {
             setAvailableSlots([]);
-            setSelectedSlot(null); // Сбрасываем выбор слота
+            setSelectedSlot(null); 
             return;
         }
 
         setIsLoadingSlots(true);
-        setSelectedSlot(null); // Сбрасываем выбор слота
+        setSelectedSlot(null); 
 
-        // Ищем ID услуги для запроса
         const service = services.find(s => s.id === Number(selectedService));
         if (!service) return;
 
-        // Запрос к вашему AvailabilityService
         api.get('/api/availability', {
             params: {
                 masterId: selectedMaster,
@@ -73,27 +63,23 @@ function AdminBookingModal({ isOpen, onClose, onSave }) {
     }, [selectedService, selectedMaster, selectedDate, services]);
 
     if (!isOpen) {
-        return null; // Не рендерим, если закрыто
+        return null; 
     }
 
     const handleSubmit = () => {
-        // Проверка на заполненность
         if (!clientName || !clientEmail || !selectedSlot) {
-            alert("Пожалуйста, заполните все поля и выберите время.");
+            toast.error("Пожалуйста, заполните все поля и выберите время.");
             return;
         }
 
-        // Собираем DTO для бэкенда
         const bookingRequest = {
             clientName: clientName,
             clientEmail: clientEmail,
             masterId: selectedMaster,
             serviceId: selectedService,
-            // Бэкенд ждет LocalDateTime, мы склеиваем дату и время
             appointmentTime: `${selectedDate}T${selectedSlot}` 
         };
         
-        // Вызываем onSave (который в AdminSchedule.jsx)
         onSave(bookingRequest);
     };
     
@@ -102,25 +88,21 @@ function AdminBookingModal({ isOpen, onClose, onSave }) {
             <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
                 <h4>Записать клиента</h4>
                 
-                {/* Используем тот же стиль, что и в Управлении */}
                 <div className={styles.editForm}>
-                    <label>Имя клиента:</label>
                     <input 
                         type="text" 
-                        placeholder="Иван" 
+                        placeholder="Имя клиента" 
                         value={clientName} 
                         onChange={e => setClientName(e.target.value)}
                     />
                     
-                    <label>Email клиента (Логин):</label>
                     <input 
                         type="email" 
-                        placeholder="client@example.com" 
+                        placeholder="email клиента" 
                         value={clientEmail} 
                         onChange={e => setClientEmail(e.target.value)}
                     />
                     
-                    <label>Услуга:</label>
                     <select value={selectedService} onChange={e => setSelectedService(e.target.value)}>
                         <option value="" disabled>-- Выберите услугу --</option>
                         {services.map(s => (
@@ -128,7 +110,6 @@ function AdminBookingModal({ isOpen, onClose, onSave }) {
                         ))}
                     </select>
 
-                    <label>Мастер:</label>
                     <select value={selectedMaster} onChange={e => setSelectedMaster(e.target.value)}>
                         <option value="" disabled>-- Выберите мастера --</option>
                         {masters.map(m => (
@@ -136,15 +117,12 @@ function AdminBookingModal({ isOpen, onClose, onSave }) {
                         ))}
                     </select>
                     
-                    <label>Дата:</label>
                     <input 
                         type="date" 
                         value={selectedDate} 
                         onChange={e => setSelectedDate(e.target.value)}
                     />
                     
-                    {/* Блок доступных слотов */}
-                    <label>Доступное время:</label>
                     <div className={styles.timeSlotsContainer}> 
                     {isLoadingSlots ? (
                         <p>Загрузка слотов...</p>
@@ -152,12 +130,7 @@ function AdminBookingModal({ isOpen, onClose, onSave }) {
                         availableSlots.map(slot => (
                             <button 
                                 key={slot}
-                                // Используем вашу функцию setSelectedSlot
                                 onClick={() => setSelectedSlot(slot)} 
-                                
-                                /* Используем классы .timeSlotButton (базовый) 
-                                   и .selected (активный), как в CSS
-                                */
                                 className={`${styles.timeSlotButton} ${selectedSlot === slot ? styles.selected : ''}`}
                             >
                                 {slot}
@@ -174,7 +147,6 @@ function AdminBookingModal({ isOpen, onClose, onSave }) {
                     <button 
                         onClick={handleSubmit} 
                         className={styles.saveButton}
-                        // Кнопка неактивна, пока не выбрано время
                         disabled={!selectedSlot || isLoadingSlots} 
                     >
                         Записать

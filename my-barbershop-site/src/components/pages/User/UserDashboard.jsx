@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import api from '../../../api/api';
 import styles from './UserDashboard.module.css';
+import { ToastContainer, toast } from 'react-toastify';
 
 function UserDashboard() {
   const [services, setServices] = useState([]);
@@ -18,9 +19,9 @@ function UserDashboard() {
   const [userName, setUserName] = useState('');
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
 
-  const [selectedDate, setSelectedDate] = useState(''); // Только дата
-  const [availableSlots, setAvailableSlots] = useState([]); // Массив слотов [ "09:00", "09:15" ]
-  const [selectedSlot, setSelectedSlot] = useState(''); // Выбранный слот
+  const [selectedDate, setSelectedDate] = useState(''); 
+  const [availableSlots, setAvailableSlots] = useState([]); 
+  const [selectedSlot, setSelectedSlot] = useState(''); 
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   useEffect(() => {
@@ -40,7 +41,6 @@ function UserDashboard() {
     if (selectedService && selectedMaster && selectedDate) {
       fetchAvailableSlots();
     }
-    // Сбрасываем слоты, если что-то меняется
     setAvailableSlots([]);
     setSelectedSlot('');
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -72,7 +72,7 @@ function UserDashboard() {
       const response = await api.get(`/api/masters/${selectedMaster}/availability`, {
         params: {
           serviceId: selectedService,
-          date: selectedDate // yyyy-MM-dd
+          date: selectedDate 
         }
       });
       setAvailableSlots(response.data);
@@ -88,7 +88,6 @@ function UserDashboard() {
 
   const fetchCompletedAppointments = async () => {
     try {
-        // Теперь этот эндпоинт отдает только COMPLETED без отзывов
         const response = await api.get('/api/timetable/user/completed');
         setCompletedAppointments(response.data);
         console.log('Прошедшие записи для отзыва загружены:', response.data);
@@ -100,7 +99,6 @@ function UserDashboard() {
   const fetchUpcomingAppointments = async () => {
     try {
         const response = await api.get('/api/timetable/user/upcoming');
-        // Сортируем от ближайшей к дальнейшей
         const sorted = response.data.sort((a, b) => new Date(a.appointmentTime) - new Date(b.appointmentTime));
         setUpcomingAppointments(sorted);
         console.log('Предстоящие записи загружены:', sorted);
@@ -111,15 +109,11 @@ function UserDashboard() {
 
   const handleBooking = () => {
     if (!selectedService || !selectedMaster || !selectedDate || !selectedSlot) {
-      alert("Выберите услугу, мастера, дату и свободное время!");
+      toast.error("Выберите услугу, мастера, дату и свободное время!");
       return;
     }
     
-    // --- ИСПРАВЛЕНИЕ: Убираем .toISOString() и +6 часов ---
-    // Мы отправляем "локальную" строку, как и в Админ-панели
-    // Бэкенд ожидает "2025-11-05T14:00"
     const finalAppointmentTime = `${selectedDate}T${selectedSlot}`;
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     const appointmentData = {
       service: { id: selectedService },
@@ -127,9 +121,9 @@ function UserDashboard() {
       appointmentTime: finalAppointmentTime, 
     };
 
-    api.post('/api/timetable', appointmentData) // Клиентский эндпоинт
+    api.post('/api/timetable', appointmentData) 
       .then(() => {
-        alert("Вы успешно забронировали услугу!");
+        toast.success("Вы успешно забронировали услугу!");
         setSelectedService('');
         setSelectedMaster(''); 
         setSelectedDate('');
@@ -140,14 +134,14 @@ function UserDashboard() {
       })
       .catch(error => {
         console.error("Ошибка при бронировании:", error);
-        alert("Ошибка при бронировании. Возможно, этот слот только что заняли. Пожалуйста, обновите слоты.");
+        toast.error("Ошибка при бронировании. Возможно, этот слот только что заняли. Пожалуйста, обновите слоты.");
         fetchAvailableSlots(); 
       });
   };
 
   const handleReviewSubmit = async () => {
     if (!selectedAppointmentIdForReview  || rating < 1) { 
-      alert("Выберите запись, на которую хотите оставить отзыв, введите текст отзыва и выберите оценку (нажмите на звезду)! ");
+      toast.error("Выберите запись, на которую хотите оставить отзыв, и поставьте оценку!");
       return;
     }
 
@@ -160,7 +154,7 @@ function UserDashboard() {
     try {
       await api.post('/api/reviews', reviewData);
       console.log("Отзыв успешно отправлен:", reviewData);
-      alert("Ваш отзыв успешно отправлен!");
+      toast.success("Ваш отзыв успешно отправлен!");
       setSelectedAppointmentIdForReview('');
       setReviewText('');
       setRating(0); 
@@ -178,27 +172,54 @@ function UserDashboard() {
       } else if (axios.isAxiosError(error) && error.message) {
            errorMessage = `Ошибка: ${error.message}`;
       }
-      alert(errorMessage);
+      toast.error(errorMessage);
     }
   };
+const handleCancelAppointment = async (appointmentId) => {
+    const ConfirmationToast = ({ closeToast }) => {
 
-  const handleCancelAppointment = async (appointmentId) => {
-    // Твое требование: "система должна спрашивать точно ли мы хотим отменить"
-    if (!window.confirm("Вы уверены, что хотите отменить эту запись?")) {
-        return;
-    }
+        const confirmAction = async () => {
+            try {
+                await api.delete(`/api/timetable/${appointmentId}`);
+                toast.success("Запись успешно отменена!");
+                fetchUpcomingAppointments();
 
-    try {
-        // Используем DELETE и правильный URL
-        await api.delete(`/api/timetable/${appointmentId}`);
-        alert("Запись успешно отменена!");
-        // Обновляем список
-        fetchUpcomingAppointments();
-    } catch (error) {
-        console.error("Ошибка при отмене записи:", error);
-        alert("Не удалось отменить запись. Возможно, она уже прошла.");
-    }
-  };
+            } catch (error) {
+                console.error("Ошибка при отмене записи:", error);
+                toast.error("Не удалось отменить запись. " + (error.response?.data?.message || ""));
+            }
+            closeToast(); 
+        };
+
+        const cancelAction = () => {
+            closeToast();
+        };
+
+        return (
+            <div>
+                <p style={{ margin: 0, marginBottom: '10px', fontSize: '1rem' }}>
+                    Вы уверены, что хотите отменить эту запись?
+                </p>
+                <button onClick={confirmAction} className={styles.toastConfirmButton}>
+                    Да, отменить
+                </button>
+                <button onClick={cancelAction} className={styles.toastCancelButton}>
+                    Нет
+                </button>
+            </div>
+        );
+    };
+
+    toast.warn(<ConfirmationToast />, {
+        position: "top-right",      
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        theme: "light",             
+        className: styles.confirmationToastBody 
+    });
+};
 
     const formatAppointmentTime = (isoString) => {
       if (!isoString) return 'Неизвестное время';
@@ -226,11 +247,11 @@ function UserDashboard() {
 
   return (
     <div className={styles.dashboard}>
+      <ToastContainer position="bottom-right" autoClose={3000} />
       <h2>{userName ? `${userName}. ` : ''}Личный кабинет</h2>
       <h3>Запись на услугу</h3>
       <div className={styles.bookingSection}>
         
-        {/* Шаг 1: Выбор Услуги */}
         <select 
           value={selectedService}
           onChange={(e) => setSelectedService(e.target.value)}
@@ -248,12 +269,11 @@ function UserDashboard() {
           )}
         </select>
         
-        {/* Шаг 2: Выбор Мастера */}
         <select
           value={selectedMaster}
           onChange={(e) => setSelectedMaster(e.target.value)}
           required
-          disabled={!selectedService} // Неактивно, пока не выбрана услуга
+          disabled={!selectedService} 
         >
           <option value="" disabled>2. Выберите мастера</option>
           {masters.length > 0 ? (
@@ -267,18 +287,18 @@ function UserDashboard() {
           )}
         </select>
 
-        {/* Шаг 3: Выбор Даты */}
         <input 
-          type="date" 
-          value={selectedDate} 
-          min={new Date().toISOString().split('T')[0]} // Нельзя выбрать прошлую дату
-          onChange={(e) => setSelectedDate(e.target.value)} 
-          disabled={!selectedMaster} // Неактивно, пока не выбран мастер
-        />
+        type="date" 
+        value={selectedDate} 
+        min={new Date().toISOString().split('T')[0]} 
+        onChange={(e) => setSelectedDate(e.target.value)} 
+        disabled={!selectedMaster} 
+      />
 
-        {/* Шаг 4: Выбор Слота */}
+      {selectedDate && (
         <div className={styles.slotsContainer}>
           {isLoadingSlots && <p>Загрузка свободных слотов...</p>}
+          
           {!isLoadingSlots && availableSlots.length > 0 && (
             availableSlots.map(slot => (
               <button 
@@ -286,23 +306,25 @@ function UserDashboard() {
                 className={`${styles.slotButton} ${selectedSlot === slot ? styles.selectedSlot : ''}`}
                 onClick={() => setSelectedSlot(slot)}
               >
-                {slot.substring(0, 5)} {/* Отображаем HH:mm */}
+                {slot.substring(0, 5)}
               </button>
             ))
           )}
-          {!isLoadingSlots && availableSlots.length === 0 && selectedDate && (
+          
+          {!isLoadingSlots && availableSlots.length === 0 && (
             <p>На выбранную дату свободных слотов нет</p>
           )}
+          
         </div>
-
-        <button 
-          className={styles.button1} 
-          onClick={handleBooking}
-          disabled={!selectedSlot} // Кнопка неактивна, пока не выбран слот
-        >
-          Забронировать
-        </button>
-      </div>
+      )}
+      <button 
+        className={styles.button1} 
+        onClick={handleBooking}
+        disabled={!selectedSlot} 
+      >
+        Забронировать
+      </button>
+</div>
 
       <div className={styles.upcomingAppointmentsSection}>
         <h3>Ваши предстоящие записи</h3>

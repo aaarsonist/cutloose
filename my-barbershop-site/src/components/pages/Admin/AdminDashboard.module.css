@@ -506,7 +506,7 @@
   cursor: pointer;
   transition: background-color 0.2s;
   font-weight: 500;
-  color: #1a73e8;
+  color: #d95700;
 }
 .scheduleCell:hover {
   background-color: #e8f0fe !important;
@@ -554,15 +554,17 @@
   margin-top: 30px;
 }
 
-.rbc-event {
-  background-color: #f0a500 !important;
-  border-color: #d49200 !important;
+:global(.rbc-event) {
+  background-color: #fce9ce !important; 
+  border-color: #ffb74d !important;
+  color: #000000 !important; 
 }
-.rbc-today {
-  background-color: #fff8e1 !important;
+:global(.rbc-today) {
+  background-color: #fff8e1 !important; 
 }
-.rbc-toolbar button.rbc-active {
-  background-color: #f0a500 !important;
+
+:global(.rbc-toolbar button.rbc-active) {
+  background-color: #f0a500 !important; 
   border-color: #d49200 !important;
 }
 
@@ -742,7 +744,7 @@
   border-color: #ff6600 !important;
 }
 
-/* === Стиль для кнопки PDF === */
+/* Стиль для кнопки PDF */
 .pdfButton {
     padding: 8px 16px;
     font-size: 0.9rem;
@@ -763,6 +765,45 @@
 .pdfButton:disabled {
     background-color: #aaa;
     cursor: not-allowed;
+}
+
+/* Стили для кнопок в toast-подтверждении */
+
+.confirmationToastBody {
+    background-color: #ffffff !important; 
+    color: #333 !important; 
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    padding: 15px !important;
+}
+
+.toastConfirmButton, 
+.toastCancelButton {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 5px;
+  font-size: 1rem;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.toastConfirmButton {
+  background-color: #ff8c00; 
+}
+.toastConfirmButton:hover {
+  background-color: #e67e00; 
+}
+
+.toastCancelButton {
+  background-color: #f0f0f0; 
+  color: #333;
+  border: 1px solid #ccc;
+}
+.toastCancelButton:hover {
+  background-color: #e0e0e0;
 }
 
 /* 6. МЕДИА-ЗАПРОСЫ (Адаптивность) */
