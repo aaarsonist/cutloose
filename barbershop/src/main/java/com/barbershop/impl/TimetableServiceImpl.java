@@ -122,6 +122,7 @@ public class TimetableServiceImpl implements TimetableService {
         dto.setMasterName(masterName);
         dto.setClientName(clientName);
         dto.setClientEmail(clientEmail);
+        dto.setCreatedAt(t.getCreatedAt());
 
         return dto;
     }

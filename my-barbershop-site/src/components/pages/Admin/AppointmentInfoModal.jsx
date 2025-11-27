@@ -36,6 +36,14 @@ function AppointmentInfoModal({ isOpen, onClose, onDelete, event }) {
                         <span>Время:</span>
                         <strong>{formatEventDate(event.start)}</strong>
                     </li>
+                    {event.createdAt && (
+                        <li>
+                            <span>Запись создана:</span>
+                            <strong style={{ color: '#777' }}>
+                                {new Date(event.createdAt).toLocaleString('ru-RU')}
+                            </strong>
+                        </li>
+                    )}
                 </ul>
 
                 <div className={styles.modalButtons}>

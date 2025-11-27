@@ -10,11 +10,15 @@ import java.util.List;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 @Entity
 @Data
 @Table(name = "timetable")
 @AllArgsConstructor
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Timetable {
 
     @Id
@@ -27,6 +31,10 @@ public class Timetable {
 
     @Column(name = "appointment_time", nullable = false)
     private LocalDateTime appointmentTime;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
     @ManyToOne
     @JoinColumn(name = "master_id", nullable = false)

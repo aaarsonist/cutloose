@@ -15,4 +15,5 @@ public class AppointmentDto {
     private String clientEmail;
     private String serviceName;
     private String masterName;
+    private LocalDateTime createdAt;
 }
