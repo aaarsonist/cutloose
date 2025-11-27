@@ -8,6 +8,7 @@ import com.barbershop.dto.report.MasterPerformanceDataDto;
 import com.barbershop.dto.report.MasterReportDataDto;
 import com.barbershop.dto.report.DailyRevenueDataPointDto;
 import com.barbershop.dto.report.SalesReportDataDto;
+import com.barbershop.dto.report.ExtendedAnalyticsDto;
 import com.barbershop.repository.MasterRepository;
 import com.barbershop.repository.ReviewRepository;
 import com.barbershop.repository.ServiceRepository;
@@ -22,6 +23,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 @Service
 @Transactional(readOnly = true)
@@ -225,5 +229,79 @@ public class ReportServiceImpl implements ReportService {
     public MasterReportDataDto getMasterData(LocalDateTime startDate, LocalDateTime endDate, List<Long> masterIds, List<Long> serviceIds) {
         // Вызываем приватный метод, передавая serviceIds
         return getMasterPerformanceReportData(startDate, endDate, masterIds, serviceIds);
+    }
+
+    @Override
+    public ExtendedAnalyticsDto getExtendedAnalytics(LocalDateTime start, LocalDateTime end) {
+        ExtendedAnalyticsDto dto = new ExtendedAnalyticsDto();
+
+        // 1. Топ Мастер
+        List<Object[]> mastersData = timetableRepository.getMastersPerformanceData(start, end);
+        if (!mastersData.isEmpty()) {
+            Object[] top = mastersData.get(0); // Первый элемент списка - массив данных
+            dto.setTopMasterName((String) top[0]);
+            // Безопасное приведение к Double через Number
+            dto.setTopMasterRating(top[1] != null ? ((Number) top[1]).doubleValue() : 0.0);
+            dto.setTopMasterRevenue(top[3] != null ? ((Number) top[3]).doubleValue() : 0.0);
+        }
+
+        // 2. Средний чек и Тренд
+        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        List<Object[]> currentStatsList = timetableRepository.getRevenueAndCount(start, end);
+        Object[] currentStats = currentStatsList.isEmpty() ? new Object[]{0.0, 0L} : currentStatsList.get(0);
+
+        // Безопасное приведение: ((Number) val).doubleValue() спасет от ошибки BigDecimal vs Double
+        Double currentRev = currentStats[0] != null ? ((Number) currentStats[0]).doubleValue() : 0.0;
+        Long currentCount = currentStats[1] != null ? ((Number) currentStats[1]).longValue() : 0L;
+
+        Double currentAvg = currentCount > 0 ? currentRev / currentCount : 0.0;
+        dto.setAverageCheck(currentAvg);
+
+        // Прошлый период
+        long days = ChronoUnit.DAYS.between(start, end);
+        LocalDateTime prevStart = start.minusDays(days);
+        LocalDateTime prevEnd = start;
+
+        List<Object[]> prevStatsList = timetableRepository.getRevenueAndCount(prevStart, prevEnd);
+        Object[] prevStats = prevStatsList.isEmpty() ? new Object[]{0.0, 0L} : prevStatsList.get(0);
+
+        Double prevRev = prevStats[0] != null ? ((Number) prevStats[0]).doubleValue() : 0.0;
+        Long prevCount = prevStats[1] != null ? ((Number) prevStats[1]).longValue() : 0L;
+        Double prevAvg = prevCount > 0 ? prevRev / prevCount : 0.0;
+
+        if (prevAvg > 0) {
+            double trend = ((currentAvg - prevAvg) / prevAvg) * 100.0;
+            dto.setAverageCheckTrend(trend);
+        } else {
+            dto.setAverageCheckTrend(null);
+        }
+        // -------------------------
+
+        // 3. Retention Rate
+        Long returning = timetableRepository.countReturningClients(start, end);
+        Long total = timetableRepository.countTotalClientsInPeriod(start, end);
+        if (total != null && total > 0) {
+            dto.setRetentionRate((double) returning / total * 100.0);
+        } else {
+            dto.setRetentionRate(0.0);
+        }
+
+        // 4. Пол (Pie Chart)
+        List<Object[]> genderData = timetableRepository.getGenderDistribution(start, end);
+        Map<String, Long> genderMap = new HashMap<>();
+        for (Object[] row : genderData) {
+            genderMap.put(row[0].toString(), (Long) row[1]);
+        }
+        dto.setGenderDistribution(genderMap);
+
+        // 5. Топ услуг (Funnel)
+        List<Object[]> servicesData = timetableRepository.getTopServices(start, end);
+        List<ExtendedAnalyticsDto.ServiceUsageDto> topServices = new ArrayList<>();
+        for (Object[] row : servicesData) {
+            topServices.add(new ExtendedAnalyticsDto.ServiceUsageDto((String) row[0], (Long) row[1]));
+        }
+        dto.setTopServices(topServices);
+
+        return dto;
     }
 }

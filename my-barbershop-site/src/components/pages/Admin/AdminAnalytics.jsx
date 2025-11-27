@@ -5,8 +5,19 @@ import styles from './AdminDashboard.module.css';
 import Range from 'rc-slider'; 
 import 'rc-slider/assets/index.css'; 
 
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2'; 
+import { 
+    Chart as ChartJS, 
+    CategoryScale, 
+    LinearScale, 
+    BarElement, 
+    PointElement, 
+    LineElement, 
+    Title, 
+    Tooltip, 
+    Legend,
+    ArcElement 
+} from 'chart.js';
+import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import Select from 'react-select';
 
 import jsPDF from 'jspdf';
@@ -14,7 +25,7 @@ import autoTable from 'jspdf-autotable';
 import moment from 'moment';
 import '../../../assets/fonts/Mulish-Regular-normal.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
 
 const formatLocalDate = (localDate) => {
     if (!localDate) return '';
@@ -73,6 +84,7 @@ function AdminAnalytics() {
     const [serviceOptions, setServiceOptions] = useState([]);
     const [masterOptions, setMasterOptions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [extendedData, setExtendedData] = useState(null);
 
     const revenueChartRef = useRef(null);
     const visitChartRef = useRef(null);
@@ -121,17 +133,22 @@ function AdminAnalytics() {
         };
 
         try {
-            const [ salesRes, serviceRes, masterRes, forecastRes ] = await Promise.all([
+            const [ salesRes, serviceRes, masterRes, forecastRes, extendedRes ] = await Promise.all([
                 api.get('/api/reports/sales', config), 
                 api.get('/api/reports/services', config), 
                 api.get('/api/reports/masters', config),
-                api.get('/api/forecast/weekly') 
+                api.get('/api/forecast/weekly'), 
+                // Новый запрос (параметры те же, masterIds/serviceIds можно игнорировать если логика бэка их не юзает, 
+                // или передать если вы добавите фильтрацию и туда)
+                api.get('/api/reports/extended', { params: { startDate: isoStartDate, endDate: isoEndDate } })
             ]);
 
             setSalesData(salesRes.data);
             setServiceData(serviceRes.data);
             setMasterData(masterRes.data);
             setForecastData(forecastRes.data); 
+            setExtendedData(extendedRes.data);
+            setExtendedData(extendedRes.data);
 
         } catch (error) {
             console.error("Ошибка при загрузке данных дашборда:", error);
@@ -338,6 +355,67 @@ const handleDownloadPDF = () => {
 
     doc.save(`analytics_report_${moment(startDate).format('YYYY-MM-DD')}.pdf`);
 };
+// Данные для Круговой диаграммы (Пол)
+    const genderChartData = {
+        labels: ['Мужские услуги', 'Женские услуги'],
+        datasets: [{
+            data: [
+                extendedData?.genderDistribution?.MEN || 0,
+                extendedData?.genderDistribution?.WOMEN || 0
+            ],
+            backgroundColor: ['#36A2EB', '#FF6384'],
+            hoverBackgroundColor: ['#36A2EB', '#FF6384']
+        }]
+    };
+
+    const genderChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false, // Позволяет диаграмме лучше вписываться в контейнер
+        plugins: {
+            legend: {
+                position: 'top',      // <-- РАЗМЕЩАЕТ ЛЕГЕНДУ В РЯД СВЕРХУ
+                align: 'center',      // Центрирует легенду
+                labels: {
+                    usePointStyle: true, // Делает маркеры круглыми (аккуратнее в ряд)
+                    padding: 20          // Отступ между элементами легенды
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        // Логика для отображения ТОЛЬКО ПРОЦЕНТОВ
+                        let label = context.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        const value = context.raw;
+                        const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
+                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+
+                        return label + percentage; // Возвращаем "Категория: 45.5%"
+                    }
+                }
+            }
+        }
+    };
+
+    // Данные для Воронки (Горизонтальный бар)
+    const funnelChartData = {
+        labels: extendedData?.topServices?.map(s => s.serviceName) || [],
+        datasets: [{
+            label: 'Количество записей',
+            data: extendedData?.topServices?.map(s => s.usageCount) || [],
+            backgroundColor: '#f0a500',
+            indexAxis: 'y', // Делает график горизонтальным
+        }]
+    };
+    
+    // Опция для горизонтального бара, чтобы он выглядел как воронка
+    const funnelOptions = {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false }, title: { display: true, text: 'Топ-5 популярных услуг' } }
+    };
     
     return (
         <div className={styles.analyticsPage}>
@@ -381,6 +459,69 @@ const handleDownloadPDF = () => {
                 >
                 {isLoading ? "Загрузка..." : "Отчет PDF"}
                 </button>
+            </div>
+
+            <div className={styles.kpiGrid}>
+                {/* Карточка 1: Топ Мастер */}
+                <div className={styles.kpiCard}>
+                    <h4>Топ Мастер</h4>
+                    {extendedData?.topMasterName ? (
+                        <>
+                            <div className={styles.kpiValue}>{extendedData.topMasterName}</div>
+                            <div className={styles.kpiSubtext}>
+                                ★ {extendedData.topMasterRating?.toFixed(2)} | {formatCurrency(extendedData.topMasterRevenue)}
+                            </div>
+                        </>
+                    ) : <span>Нет данных</span>}
+                </div>
+
+                {/* Карточка 2: Средний чек */}
+                <div className={styles.kpiCard}>
+                    <h4>Средний чек</h4>
+                    <div className={styles.kpiValue}>
+                        {formatCurrency(extendedData?.averageCheck)}
+                    </div>
+                    <div className={styles.kpiSubtext}>
+                        {extendedData?.averageCheckTrend != null ? (
+                            <>
+                                {extendedData.averageCheckTrend >= 0 ? (
+                                    <span style={{color: 'green'}}>▲ {extendedData.averageCheckTrend.toFixed(1)}%</span>
+                                ) : (
+                                    <span style={{color: 'red'}}>▼ {Math.abs(extendedData.averageCheckTrend).toFixed(1)}%</span>
+                                )}
+                                {' к предыдущему периоду'}
+                            </>
+                        ) : (
+                            // Если данных для сравнения нет, выводим заглушку или null
+                            <span style={{color: '#ccc', fontSize: '0.9em'}}>Нет данных для сравнения с предыдущим периодом</span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Карточка 3: Удержание */}
+                <div className={styles.kpiCard}>
+                    <h4>Коэффициент удержания</h4>
+                    <div className={styles.kpiValue}>
+                        {extendedData?.retentionRate ? extendedData.retentionRate.toFixed(1) : 0}%
+                    </div>
+                    <div className={styles.kpiSubtext}>Клиентов вернулись за повторной услугой</div>
+                </div>
+            </div>
+
+            {/* === РЯД НОВЫХ ГРАФИКОВ === */}
+            <div className={styles.dashboardGrid}>
+                <div className={styles.widget}>
+                    <h3>Доля категорий услуг</h3>
+                    <div style={{ height: '250px', display: 'flex', justifyContent: 'center' }}>
+                        {extendedData ? <Doughnut data={genderChartData} options={genderChartOptions}/> : "Загрузка..."}
+                    </div>
+                </div>
+                <div className={styles.widget}>
+                    <h3>Топ популярных услуг</h3>
+                    <div style={{ height: '250px' }}>
+                        {extendedData ? <Bar data={funnelChartData} options={funnelOptions} /> : "Загрузка..."}
+                    </div>
+                </div>
             </div>
 
             <div className={styles.dashboardGrid}>

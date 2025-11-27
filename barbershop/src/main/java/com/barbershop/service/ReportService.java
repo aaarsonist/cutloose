@@ -12,4 +12,6 @@ public interface ReportService {
     ServiceReportDataDto getServiceData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds, List<Long> masterIds);
 
     MasterReportDataDto getMasterData(LocalDateTime startDate, LocalDateTime endDate, List<Long> masterIds, List<Long> serviceIds);
+
+    ExtendedAnalyticsDto getExtendedAnalytics(LocalDateTime start, LocalDateTime end);
 }

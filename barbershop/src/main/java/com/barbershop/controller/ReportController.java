@@ -1,9 +1,6 @@
 package com.barbershop.controller;
 
-import com.barbershop.dto.report.PerformanceReportDto;
-import com.barbershop.dto.report.MasterReportDataDto;
-import com.barbershop.dto.report.SalesReportDataDto;
-import com.barbershop.dto.report.ServiceReportDataDto;
+import com.barbershop.dto.report.*;
 import com.barbershop.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -80,5 +77,12 @@ public class ReportController {
                 parseDate(startDate), parseDate(endDate), parseIds(masterIds), parseIds(serviceIds)
         );
         return ResponseEntity.ok(data);
+    }
+
+    @GetMapping("/extended")
+    public ResponseEntity<ExtendedAnalyticsDto> getExtendedAnalytics(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return ResponseEntity.ok(reportService.getExtendedAnalytics(startDate, endDate));
     }
 }
