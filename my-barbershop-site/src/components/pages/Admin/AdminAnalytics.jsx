@@ -74,8 +74,6 @@ function AdminAnalytics() {
     const [serviceData, setServiceData] = useState(null);
     const [masterData, setMasterData] = useState(null); 
     
-    const [forecastData, setForecastData] = useState([]);
-    
     const [sliderValues, setSliderValues] = useState([ONE_MONTH_AGO_TS, TODAY_TS]);
     const [startDate, setStartDate] = useState(toInputFormat(new Date(ONE_MONTH_AGO_TS))); 
     const [endDate, setEndDate] = useState(toInputFormat(new Date(TODAY_TS))); 
@@ -133,11 +131,10 @@ function AdminAnalytics() {
         };
 
         try {
-            const [ salesRes, serviceRes, masterRes, forecastRes, extendedRes ] = await Promise.all([
+            const [ salesRes, serviceRes, masterRes, extendedRes ] = await Promise.all([
                 api.get('/api/reports/sales', config), 
                 api.get('/api/reports/services', config), 
                 api.get('/api/reports/masters', config),
-                api.get('/api/forecast/weekly'), 
                 // Новый запрос (параметры те же, masterIds/serviceIds можно игнорировать если логика бэка их не юзает, 
                 // или передать если вы добавите фильтрацию и туда)
                 api.get('/api/reports/extended', { params: { startDate: isoStartDate, endDate: isoEndDate } })
@@ -145,8 +142,7 @@ function AdminAnalytics() {
 
             setSalesData(salesRes.data);
             setServiceData(serviceRes.data);
-            setMasterData(masterRes.data);
-            setForecastData(forecastRes.data); 
+            setMasterData(masterRes.data); 
             setExtendedData(extendedRes.data);
             setExtendedData(extendedRes.data);
 
@@ -203,40 +199,6 @@ function AdminAnalytics() {
         }],
     };
     
-    const forecastChartData = {
-        labels: forecastData.map(d => d.dayOfWeekRussian), 
-        datasets: [
-            {
-                label: 'Предложение',
-                data: forecastData.map(d => d.supplyHours.toFixed(1)),
-                backgroundColor: 'rgba(54, 162, 235, 0.6)', 
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-            },
-            {
-                label: 'Прогноз спроса',
-                data: forecastData.map(d => d.demandHours.toFixed(1)),
-                backgroundColor: 'rgba(255, 159, 64, 0.6)', 
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1,
-            }
-        ]
-    };
-    
-    const forecastChartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { position: 'top' }, 
-            title: { display: false },
-        },
-        scales: { 
-            y: { 
-                beginAtZero: true,
-                title: { display: true, text: 'Часы' }
-            } 
-        }
-    };
 const handleDownloadPDF = () => {
     const doc = new jsPDF();
     let y = 20; 
@@ -589,32 +551,6 @@ const handleDownloadPDF = () => {
                                 )) : <tr><td colSpan="2">Нет данных</td></tr>}
                             </tbody>
                         </table>
-                    </div>
-                </div>
-            </div>
-
-            <div className={styles.forecastSection}>
-                <h3>Прогноз спроса и рекомендации по оптимизации</h3>
-                
-                <div className={styles.dashboardGrid}>
-                    <div className={styles.widget}>
-                        <h3>Прогноз спроса vs предложение (в часах)</h3>
-                        {forecastData.length > 0 ? (
-                            <div style={{height: '300px'}}>
-                                <Bar options={forecastChartOptions} data={forecastChartData} />
-                            </div>
-                        ) : "Загрузка..."}
-                    </div>
-                    
-                    <div className={styles.widget}>
-                        <h3>Рекомендации по оптимизации</h3>
-                        <ul className={styles.recommendationList}>
-                            {forecastData.map(day => (
-                                <li key={day.dayOfWeek} className={styles[day.recommendationLevel.toLowerCase()]}>
-                                    <strong>{day.dayOfWeekRussian}:</strong> {day.recommendationText}
-                                </li>
-                            ))}
-                        </ul>
                     </div>
                 </div>
             </div>

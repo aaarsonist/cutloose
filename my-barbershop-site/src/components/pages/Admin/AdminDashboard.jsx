@@ -3,6 +3,7 @@ import styles from './AdminDashboard.module.css';
 import AdminAnalytics from './AdminAnalytics'; 
 import AdminManagement from './AdminManagement'; 
 import AdminSchedule from './AdminSchedule'; 
+import AdminForecast from './AdminForecast';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -17,6 +18,8 @@ function AdminDashboard() {
         return <AdminSchedule />;
       case 'analytics':
         return <AdminAnalytics />;
+      case 'forecast':
+        return <AdminForecast />;
       default:
         return <AdminSchedule />;
     }
@@ -48,8 +51,14 @@ function AdminDashboard() {
           onClick={() => setActiveSection('analytics')}
           className={activeSection === 'analytics' ? styles.active : ''}
         >
-          Аналитика и прогнозы
+          Аналитика 
         </button>
+       <button 
+          className={activeSection === 'forecast' ? styles.active : ''} 
+          onClick={() => setActiveSection('forecast')}
+          >
+          Прогнозы и рекомендации
+      </button>
       </div>
 
       <div className={styles.content}>

@@ -3,13 +3,6 @@ import api from '../../../api/api';
 import styles from './AdminDashboard.module.css'; 
 import { toast } from 'react-toastify';
 
-const CATEGORY_LABELS = {
-    HAIR: 'Парикмахерский зал',
-    BEARD: 'Борода и усы',
-    NAILS: 'Ногтевой сервис',
-    FACE: 'Лицо и брови'
-};
-
 function AdminManagement() {
     const [services, setServices] = useState([]);
     const [masters, setMasters] = useState([]);
