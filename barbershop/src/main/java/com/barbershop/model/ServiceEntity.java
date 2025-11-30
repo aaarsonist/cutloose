@@ -28,6 +28,10 @@ public class ServiceEntity {
     @Enumerated(EnumType.STRING)
     private ServiceType type;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ServiceCategory category;
+
     @Column(name = "duration")
     private Integer duration;
 }

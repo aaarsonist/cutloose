@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +23,10 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
 
     @Autowired
     private MasterRepository masterRepository; // Нужен для привязки
+    private static final LocalTime MIN_OPEN_TIME = LocalTime.of(9, 0);
+    private static final LocalTime MAX_CLOSE_TIME = LocalTime.of(21, 0);
+    private static final int MAX_WORK_HOURS = 8;
+    private static final int MAX_WORK_DAYS_PER_WEEK = 5;
 
     @Override
     @Transactional(readOnly = true)
@@ -34,40 +40,68 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
 
         Long masterId = scheduleData.getMaster().getId();
         DayOfWeek day = scheduleData.getDayOfWeek();
+        LocalTime newStart = scheduleData.getStartTime();
+        LocalTime newEnd = scheduleData.getEndTime();
 
-        // 1. Пытаемся найти существующую запись
+        // 1. Валидация (если это не удаление/выходной)
+        if (newStart != null && newEnd != null) {
+
+            // Проверка 1: Диапазон 9:00 - 21:00
+            if (newStart.isBefore(MIN_OPEN_TIME) || newEnd.isAfter(MAX_CLOSE_TIME)) {
+                throw new IllegalArgumentException("Рабочее время должно быть в пределах 09:00 - 21:00");
+            }
+            if (!newStart.isBefore(newEnd)) {
+                throw new IllegalArgumentException("Время начала должно быть раньше времени окончания");
+            }
+
+            // Проверка 2: Длительность смены <= 8 часов
+            long hours = Duration.between(newStart, newEnd).toHours();
+            // Если нужно точнее (например, 8ч 30мин - это ок или нет?), можно использовать toMinutes()
+            // duration.toMinutes() > 8 * 60
+            if (hours > MAX_WORK_HOURS || (hours == MAX_WORK_HOURS && Duration.between(newStart, newEnd).toMinutes() > MAX_WORK_HOURS * 60)) {
+                throw new IllegalArgumentException("Смена не может длиться более 8 часов");
+            }
+        }
+
+        // 2. Работа с БД
         Optional<WorkSchedule> existingScheduleOpt = workScheduleRepository
                 .findByMasterIdAndDayOfWeek(masterId, day);
 
         WorkSchedule scheduleToSave;
 
         if (existingScheduleOpt.isPresent()) {
-            // 2. Если запись есть - обновляем ее
+            // Редактирование существующей записи
             scheduleToSave = existingScheduleOpt.get();
-            scheduleToSave.setStartTime(scheduleData.getStartTime());
-            scheduleToSave.setEndTime(scheduleData.getEndTime());
+            scheduleToSave.setStartTime(newStart);
+            scheduleToSave.setEndTime(newEnd);
 
-            // Если время null (т.е. стал "Выходной"), удаляем запись
-            if (scheduleData.getStartTime() == null) {
+            // Если стало "Выходной" (время null) -> Удаляем
+            if (newStart == null) {
                 workScheduleRepository.delete(scheduleToSave);
-                return null; // Возвращаем null, чтобы фронтенд понял, что это удаление
+                return null;
             }
 
         } else {
-            // 3. Если записи нет и это не "Выходной" - создаем новую
-            if (scheduleData.getStartTime() == null) {
-                return null; // Не нужно создавать запись для "Выходного", если ее и не было
+            // Создание новой записи (ранее был выходной)
+
+            if (newStart == null) {
+                return null; // Был выходной, остался выходной
+            }
+
+            // Проверка 3: Лимит рабочих дней в неделю (только при создании нового дня)
+            long currentWorkDays = workScheduleRepository.countByMasterId(masterId);
+            if (currentWorkDays >= MAX_WORK_DAYS_PER_WEEK) {
+                throw new IllegalArgumentException("Мастер не может работать более 5 дней в неделю");
             }
 
             scheduleToSave = new WorkSchedule();
-            // Находим мастера, чтобы привязать
             Master master = masterRepository.findById(masterId)
                     .orElseThrow(() -> new RuntimeException("Master not found"));
 
             scheduleToSave.setMaster(master);
             scheduleToSave.setDayOfWeek(day);
-            scheduleToSave.setStartTime(scheduleData.getStartTime());
-            scheduleToSave.setEndTime(scheduleData.getEndTime());
+            scheduleToSave.setStartTime(newStart);
+            scheduleToSave.setEndTime(newEnd);
         }
 
         return workScheduleRepository.save(scheduleToSave);

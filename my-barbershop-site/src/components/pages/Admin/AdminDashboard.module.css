@@ -93,33 +93,30 @@
 }
 
 /* Стили Слайдера (rc-slider) */
-.rc-slider-track {
-  background-color: #f0a500;
-  height: 6px;
+:global(.rc-slider-track) {
+  background-color: #f0a500 !important; 
+  height: 5px;
 }
-.rc-slider-rail {
-  background-color: #e9e9e9;
-  height: 6px;
+
+:global(.rc-slider-rail) {
+  background-color: #e9e9e9 !important;
+  height: 5px;
 }
-.rc-slider-handle {
+
+:global(.rc-slider-handle) {
   height: 18px;
   width: 18px;
-  margin-top: -6px;
-  background-color: #fff;
-  border: 3px solid #f0a500;
+  margin-top: -6px; 
+  background-color: #fff !important;
+  border: 3px solid #f0a500 !important; 
   opacity: 1;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
 }
-.rc-slider-handle:hover,
-.rc-slider-handle:active,
-.rc-slider-handle:focus,
-.rc-slider-handle-dragging {
-  border-color: #d49200;
-  box-shadow: 0 0 5px #f0a500;
-}
-.rc-slider-handle:focus-visible {
+
+
+:global(.rc-slider-handle:focus-visible) {
   outline: none;
-  box-shadow: 0 0 5px #f0a500;
+  box-shadow: 0 0 5px #f0a500 !important;
 }
 
 /* Панель фильтров */
@@ -839,6 +836,7 @@
 .kpiSubtext {
     font-size: 0.85rem;
     color: #555;
+    font-family: 'Mulish', sans-serif !important;
 }
 
 @media (max-width: 768px) {

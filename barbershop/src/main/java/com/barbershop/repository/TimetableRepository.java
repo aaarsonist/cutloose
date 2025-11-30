@@ -108,12 +108,13 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
             "WHERE t.status = 'COMPLETED' AND t.appointmentTime BETWEEN :start AND :end")
     List<Object[]> getRevenueAndCount(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    // 2. Распределение по типам (MEN/WOMEN)
-    @Query("SELECT s.type, COUNT(t) " +
+    //2. Группировка по CATEGORY
+    @Query("SELECT s.category, COUNT(t) " +
             "FROM Timetable t JOIN t.service s " +
-            "WHERE t.status = 'COMPLETED' AND t.appointmentTime BETWEEN :start AND :end " + // <--- ИСПРАВЛЕНО
-            "GROUP BY s.type")
-    List<Object[]> getGenderDistribution(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+            "WHERE t.status = com.barbershop.model.BookingStatus.COMPLETED " +
+            "AND t.appointmentTime BETWEEN :start AND :end " +
+            "GROUP BY s.category")
+    List<Object[]> getCategoryDistribution(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     // 3. Топ услуг (для воронки)
     @Query("SELECT s.name, COUNT(t) as cnt " +

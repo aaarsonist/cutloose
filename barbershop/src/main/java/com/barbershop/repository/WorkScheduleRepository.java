@@ -13,6 +13,6 @@ public interface WorkScheduleRepository extends JpaRepository<WorkSchedule, Long
 
     // Находит график для мастера на конкретный день недели
     Optional<WorkSchedule> findByMasterIdAndDayOfWeek(Long masterId, DayOfWeek dayOfWeek);
-
     List<WorkSchedule> findAllByOrderByMasterIdAsc();
+    long countByMasterId(Long masterId);
 }

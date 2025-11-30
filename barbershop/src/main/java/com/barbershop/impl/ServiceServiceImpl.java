@@ -37,6 +37,7 @@ public class ServiceServiceImpl implements ServiceService {
         existingService.setPrice(service.getPrice());
         existingService.setDuration(service.getDuration());
         existingService.setType(service.getType());
+        existingService.setCategory(service.getCategory());
         return serviceRepository.save(existingService);
     }
 

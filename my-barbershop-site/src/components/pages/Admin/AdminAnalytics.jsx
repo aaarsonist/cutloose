@@ -188,8 +188,8 @@ function AdminAnalytics() {
         datasets: [{
             label: 'Выручка (BYN)',
             data: salesData?.dailyRevenueDataPoints.map(dp => dp.totalRevenue) || [],
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            borderColor: '#FF9966',
+            backgroundColor: '#FF9966',
             fill: true,
         }],
     };
@@ -199,7 +199,7 @@ function AdminAnalytics() {
         datasets: [{
             label: 'Кол-во записей',
             data: serviceData?.visitData.map(dp => dp.totalVisits) || [],
-            backgroundColor: 'rgba(153, 102, 255, 0.6)',
+            backgroundColor: '#fe7777ff',
         }],
     };
     
@@ -355,16 +355,32 @@ const handleDownloadPDF = () => {
 
     doc.save(`analytics_report_${moment(startDate).format('YYYY-MM-DD')}.pdf`);
 };
-// Данные для Круговой диаграммы (Пол)
-    const genderChartData = {
-        labels: ['Мужские услуги', 'Женские услуги'],
+    // Данные для Круговой диаграммы (КАТЕГОРИИ)
+    // 1. Метаданные категорий: Название и Цвет (фиксированные)
+    const categoryMeta = {
+        HAIR:  { label: 'Волосы', color: '#FF6666' }, 
+        FACE:  { label: 'Лицо',   color: '#FF9966' }, 
+        NAILS: { label: 'Ногти',  color: '#FFCC99' }, 
+        BEARD: { label: 'Борода', color: '#FFFFCC' }
+    };
+
+    // 2. Формируем массив данных и СОРТИРУЕМ его по убыванию значения (value)
+    const sortedCategories = Object.keys(categoryMeta)
+        .map(key => ({
+            label: categoryMeta[key].label,
+            value: extendedData?.categoryDistribution?.[key] || 0,
+            color: categoryMeta[key].color
+        }))
+        .sort((a, b) => a.value - b.value); // Сортировка: от большего к меньшему
+
+    // 3. Собираем итоговый объект для графика
+    const categoryChartData = {
+        labels: sortedCategories.map(item => item.label),
         datasets: [{
-            data: [
-                extendedData?.genderDistribution?.MEN || 0,
-                extendedData?.genderDistribution?.WOMEN || 0
-            ],
-            backgroundColor: ['#36A2EB', '#FF6384'],
-            hoverBackgroundColor: ['#36A2EB', '#FF6384']
+            data: sortedCategories.map(item => item.value),
+            backgroundColor: sortedCategories.map(item => item.color),
+            hoverBackgroundColor: sortedCategories.map(item => item.color),
+            borderWidth: 1
         }]
     };
 
@@ -373,7 +389,8 @@ const handleDownloadPDF = () => {
         maintainAspectRatio: false, // Позволяет диаграмме лучше вписываться в контейнер
         plugins: {
             legend: {
-                position: 'top',      // <-- РАЗМЕЩАЕТ ЛЕГЕНДУ В РЯД СВЕРХУ
+                position: 'top',      // <-- Легенда сверху ("выше")
+                reverse: true,      // <-- РАЗМЕЩАЕТ ЛЕГЕНДУ В РЯД СВЕРХУ
                 align: 'center',      // Центрирует легенду
                 labels: {
                     usePointStyle: true, // Делает маркеры круглыми (аккуратнее в ряд)
@@ -419,7 +436,71 @@ const handleDownloadPDF = () => {
     
     return (
         <div className={styles.analyticsPage}>
-            
+           <div className={styles.kpiGrid}>
+                {/* Карточка 1: Топ Мастер */}
+                <div className={styles.kpiCard}>
+                    <h4>Топ Мастер</h4>
+                    {extendedData?.topMasterName ? (
+                        <>
+                            <div className={styles.kpiValue}>{extendedData.topMasterName}</div>
+                            <div className={styles.kpiSubtext}>
+                                ★ {extendedData.topMasterRating?.toFixed(2)} | {formatCurrency(extendedData.topMasterRevenue)}
+                            </div>
+                        </>
+                    ) : <span>Нет данных</span>}
+                </div>
+
+                {/* Карточка 2: Общая выручка */}
+                <div className={styles.kpiCard}>
+                    <h4>Общая выручка</h4>
+                    <div className={styles.kpiValue}>
+                        {/* Используем новое поле totalRevenue */}
+                        {formatCurrency(extendedData?.totalRevenue)}
+                    </div>
+                    <div className={styles.kpiSubtext}>
+                        {/* Используем новое поле totalRevenueTrend */}
+                        {extendedData?.totalRevenueTrend != null ? (
+                            <>
+                                {extendedData.totalRevenueTrend >= 0 ? (
+                                    <span style={{color: 'green'}}>▲ {extendedData.totalRevenueTrend.toFixed(1)}%</span>
+                                ) : (
+                                    <span style={{color: 'red'}}>▼ {Math.abs(extendedData.totalRevenueTrend).toFixed(1)}%</span>
+                                )}
+                                {' к предыдущему периоду'}
+                            </>
+                        ) : (
+                            <span style={{color: '#ccc', fontSize: '0.9em'}}>Нет данных для сравнения</span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Карточка 3: Удержание */}
+                <div className={styles.kpiCard}>
+                    <h4>Коэффициент удержания</h4>
+                    <div className={styles.kpiValue}>
+                        {extendedData?.retentionRate ? extendedData.retentionRate.toFixed(1) : 0}%
+                    </div>
+                    <div className={styles.kpiSubtext}>Клиентов вернулись за повторной услугой</div>
+                </div>
+            </div>
+
+            {/* === РЯД НОВЫХ ГРАФИКОВ === */}
+            <div className={styles.dashboardGrid}>
+                <div className={styles.widget}>
+                    <h3>Доли категорий услуг</h3>
+                    <div style={{ height: '250px', display: 'flex', justifyContent: 'center' }}>
+                        {/* Передаем новые данные categoryChartData */}
+                        {extendedData ? <Doughnut data={categoryChartData} options={genderChartOptions} /> : "Загрузка..."}
+                    </div>
+                </div>
+                <div className={styles.widget}>
+                    <h3>Топ популярных услуг</h3>
+                    <div style={{ height: '250px' }}>
+                        {extendedData ? <Bar data={funnelChartData} options={funnelOptions} /> : "Загрузка..."}
+                    </div>
+                </div>
+            </div>
+
             <div className={styles.dateSliderBar}>
                 <span className={styles.sliderLabel}>{toLabelFormat(sliderValues[0])}</span>
                 <div className={styles.sliderWrapper}>
@@ -436,6 +517,7 @@ const handleDownloadPDF = () => {
                 <span className={styles.sliderLabel}>{toLabelFormat(sliderValues[1])}</span>
                 {isLoading && <div className={styles.loader}>Обновление...</div>}
             </div>
+
             <div className={styles.filterBar}>
                 <div className={styles.filterGroupWide}>
                     <Select
@@ -461,68 +543,6 @@ const handleDownloadPDF = () => {
                 </button>
             </div>
 
-            <div className={styles.kpiGrid}>
-                {/* Карточка 1: Топ Мастер */}
-                <div className={styles.kpiCard}>
-                    <h4>Топ Мастер</h4>
-                    {extendedData?.topMasterName ? (
-                        <>
-                            <div className={styles.kpiValue}>{extendedData.topMasterName}</div>
-                            <div className={styles.kpiSubtext}>
-                                ★ {extendedData.topMasterRating?.toFixed(2)} | {formatCurrency(extendedData.topMasterRevenue)}
-                            </div>
-                        </>
-                    ) : <span>Нет данных</span>}
-                </div>
-
-                {/* Карточка 2: Средний чек */}
-                <div className={styles.kpiCard}>
-                    <h4>Средний чек</h4>
-                    <div className={styles.kpiValue}>
-                        {formatCurrency(extendedData?.averageCheck)}
-                    </div>
-                    <div className={styles.kpiSubtext}>
-                        {extendedData?.averageCheckTrend != null ? (
-                            <>
-                                {extendedData.averageCheckTrend >= 0 ? (
-                                    <span style={{color: 'green'}}>▲ {extendedData.averageCheckTrend.toFixed(1)}%</span>
-                                ) : (
-                                    <span style={{color: 'red'}}>▼ {Math.abs(extendedData.averageCheckTrend).toFixed(1)}%</span>
-                                )}
-                                {' к предыдущему периоду'}
-                            </>
-                        ) : (
-                            // Если данных для сравнения нет, выводим заглушку или null
-                            <span style={{color: '#ccc', fontSize: '0.9em'}}>Нет данных для сравнения с предыдущим периодом</span>
-                        )}
-                    </div>
-                </div>
-
-                {/* Карточка 3: Удержание */}
-                <div className={styles.kpiCard}>
-                    <h4>Коэффициент удержания</h4>
-                    <div className={styles.kpiValue}>
-                        {extendedData?.retentionRate ? extendedData.retentionRate.toFixed(1) : 0}%
-                    </div>
-                    <div className={styles.kpiSubtext}>Клиентов вернулись за повторной услугой</div>
-                </div>
-            </div>
-
-            {/* === РЯД НОВЫХ ГРАФИКОВ === */}
-            <div className={styles.dashboardGrid}>
-                <div className={styles.widget}>
-                    <h3>Доля категорий услуг</h3>
-                    <div style={{ height: '250px', display: 'flex', justifyContent: 'center' }}>
-                        {extendedData ? <Doughnut data={genderChartData} options={genderChartOptions}/> : "Загрузка..."}
-                    </div>
-                </div>
-                <div className={styles.widget}>
-                    <h3>Топ популярных услуг</h3>
-                    <div style={{ height: '250px' }}>
-                        {extendedData ? <Bar data={funnelChartData} options={funnelOptions} /> : "Загрузка..."}
-                    </div>
-                </div>
-            </div>
 
             <div className={styles.dashboardGrid}>
                 <div className={styles.widget}>

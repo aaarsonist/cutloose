@@ -117,11 +117,27 @@ function AdminSchedule() {
                 }
             });
             toast.success('График успешно сохранен!'); 
+            setIsScheduleModalOpen(false)
         } catch (error) {
             console.error("Ошибка при сохранении графика:", error);
-            toast.error("Не удалось сохранить график."); 
-        } finally {
-            setIsScheduleModalOpen(false); 
+            
+            // 1. Пытаемся получить сообщение от бэкенда
+            // (Spring Boot обычно кладет текст ошибки в 'message' или просто в body)
+            let errorMessage = "Не удалось сохранить график.";
+            
+            if (error.response && error.response.data) {
+                // Если пришел JSON с полем message
+                if (error.response.data.message) {
+                    errorMessage = error.response.data.message;
+                } 
+                // Если пришла просто строка
+                else if (typeof error.response.data === 'string') {
+                    errorMessage = error.response.data;
+                }
+            }
+
+            // 2. Показываем конкретную ошибку
+            toast.error(errorMessage); 
         }
     };
 

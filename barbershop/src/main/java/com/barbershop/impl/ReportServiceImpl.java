@@ -245,19 +245,15 @@ public class ReportServiceImpl implements ReportService {
             dto.setTopMasterRevenue(top[3] != null ? ((Number) top[3]).doubleValue() : 0.0);
         }
 
-        // 2. Средний чек и Тренд
-        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        // 2. Общая выручка и Тренд (ЗАМЕНА ЛОГИКИ)
         List<Object[]> currentStatsList = timetableRepository.getRevenueAndCount(start, end);
         Object[] currentStats = currentStatsList.isEmpty() ? new Object[]{0.0, 0L} : currentStatsList.get(0);
 
-        // Безопасное приведение: ((Number) val).doubleValue() спасет от ошибки BigDecimal vs Double
+        // Получаем просто сумму выручки
         Double currentRev = currentStats[0] != null ? ((Number) currentStats[0]).doubleValue() : 0.0;
-        Long currentCount = currentStats[1] != null ? ((Number) currentStats[1]).longValue() : 0L;
+        dto.setTotalRevenue(currentRev); // <-- Сохраняем выручку
 
-        Double currentAvg = currentCount > 0 ? currentRev / currentCount : 0.0;
-        dto.setAverageCheck(currentAvg);
-
-        // Прошлый период
+        // Расчет прошлого периода
         long days = ChronoUnit.DAYS.between(start, end);
         LocalDateTime prevStart = start.minusDays(days);
         LocalDateTime prevEnd = start;
@@ -266,14 +262,13 @@ public class ReportServiceImpl implements ReportService {
         Object[] prevStats = prevStatsList.isEmpty() ? new Object[]{0.0, 0L} : prevStatsList.get(0);
 
         Double prevRev = prevStats[0] != null ? ((Number) prevStats[0]).doubleValue() : 0.0;
-        Long prevCount = prevStats[1] != null ? ((Number) prevStats[1]).longValue() : 0L;
-        Double prevAvg = prevCount > 0 ? prevRev / prevCount : 0.0;
 
-        if (prevAvg > 0) {
-            double trend = ((currentAvg - prevAvg) / prevAvg) * 100.0;
-            dto.setAverageCheckTrend(trend);
+        // Считаем тренд по ВЫРУЧКЕ
+        if (prevRev > 0) {
+            double trend = ((currentRev - prevRev) / prevRev) * 100.0;
+            dto.setTotalRevenueTrend(trend); // <-- Сохраняем тренд выручки
         } else {
-            dto.setAverageCheckTrend(null);
+            dto.setTotalRevenueTrend(null);
         }
         // -------------------------
 
@@ -286,13 +281,14 @@ public class ReportServiceImpl implements ReportService {
             dto.setRetentionRate(0.0);
         }
 
-        // 4. Пол (Pie Chart)
-        List<Object[]> genderData = timetableRepository.getGenderDistribution(start, end);
-        Map<String, Long> genderMap = new HashMap<>();
-        for (Object[] row : genderData) {
-            genderMap.put(row[0].toString(), (Long) row[1]);
+        // 4. Доли категорий (Pie Chart)
+        List<Object[]> catData = timetableRepository.getCategoryDistribution(start, end);
+        Map<String, Long> catMap = new HashMap<>();
+        for (Object[] row : catData) {
+            // row[0] это Enum ServiceCategory, приводим к String
+            catMap.put(row[0].toString(), (Long) row[1]);
         }
-        dto.setGenderDistribution(genderMap);
+        dto.setCategoryDistribution(catMap);
 
         // 5. Топ услуг (Funnel)
         List<Object[]> servicesData = timetableRepository.getTopServices(start, end);

@@ -3,13 +3,20 @@ import api from '../../../api/api';
 import styles from './AdminDashboard.module.css'; 
 import { toast } from 'react-toastify';
 
+const CATEGORY_LABELS = {
+    HAIR: 'Парикмахерский зал',
+    BEARD: 'Борода и усы',
+    NAILS: 'Ногтевой сервис',
+    FACE: 'Лицо и брови'
+};
+
 function AdminManagement() {
     const [services, setServices] = useState([]);
     const [masters, setMasters] = useState([]);
     const [reviews, setReviews] = useState([]); 
     const [editingService, setEditingService] = useState(null);
     const [newService, setNewService] = useState({
-        name: '', price: '', type: 'MEN', duration: ''
+        name: '', price: '', type: 'MEN', duration: '', category: 'HAIR'
     });
     const [newMasterName, setNewMasterName] = useState('');
 
@@ -51,7 +58,7 @@ function AdminManagement() {
         }));
     };
     const handleAddService = async () => { 
-        if (!newService.name || !newService.price || !newService.duration) {
+        if (!newService.name || !newService.price || !newService.duration || !newService.category) {
             toast.error('Пожалуйста, заполните все поля (Название, Цена, Длительность).');
             return;
         }
@@ -60,11 +67,12 @@ function AdminManagement() {
                 name: newService.name,
                 price: parseFloat(newService.price),
                 type: newService.type,
-                duration: parseInt(newService.duration)
+                duration: parseInt(newService.duration),
+                category: newService.category
             };
             await api.post('/services', serviceToAdd);
             toast.success('Услуга успешно добавлена!');
-            setNewService({ name: '', price: '', type: 'MEN', duration: '' });
+            setNewService({ name: '', price: '', type: 'MEN', duration: '', category: 'HAIR' });
             fetchServices();
         } catch (error) {
             console.error('Ошибка при добавлении услуги:', error);
@@ -325,6 +333,12 @@ function AdminManagement() {
                                             <option value="MEN">Мужская</option>
                                             <option value="WOMEN">Женская</option>
                                         </select>
+                                        <select name="category" value={editingService.category} onChange={handleEditFormChange}>
+                                            <option value="HAIR">Парикмахерский зал</option>
+                                            <option value="BEARD">Борода и усы</option>
+                                            <option value="NAILS">Ногтевой сервис</option>
+                                            <option value="FACE">Лицо и брови</option>
+                                        </select>
                                         <button onClick={handleSaveEdit}>Сохранить</button>
                                     </div>
                                 ) : (
@@ -366,6 +380,12 @@ function AdminManagement() {
                         <select name="type" value={newService.type} onChange={handleServiceFormChange} >
                             <option value="MEN">Мужская</option>
                             <option value="WOMEN">Женская</option>
+                        </select>
+                        <select name="category" value={newService.category} onChange={handleServiceFormChange}>
+                            <option value="HAIR">Парикмахерский зал</option>
+                            <option value="BEARD">Борода и усы</option>
+                            <option value="NAILS">Ногтевой сервис</option>
+                            <option value="FACE">Лицо и брови</option>
                         </select>
                         <button onClick={handleAddService}>Добавить услугу</button>
                     </div>

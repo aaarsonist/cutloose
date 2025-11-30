@@ -11,15 +11,15 @@ public class ExtendedAnalyticsDto {
     private Double topMasterRevenue;
     private Double topMasterRating;
 
-    // Карточка 2: Средний чек
-    private Double averageCheck;
-    private Double averageCheckTrend; // Процент роста/падения по сравнению с прошлым периодом
+    // Карточка 2: Общая выручка
+    private Double totalRevenue;
+    private Double totalRevenueTrend;
 
     // Карточка 3: Удержание
     private Double retentionRate; // Процент
 
     // Круговая диаграмма (Мужчины vs Женщины)
-    private Map<String, Long> genderDistribution; // "MEN": 50, "WOMEN": 30
+    private Map<String, Long> categoryDistribution;
 
     // Воронка (Топ услуг)
     private List<ServiceUsageDto> topServices;
