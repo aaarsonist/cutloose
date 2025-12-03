@@ -1,8 +1,11 @@
 package com.barbershop.impl;
 
+import com.barbershop.model.BookingStatus;
 import com.barbershop.model.Master;
+import com.barbershop.model.Timetable;
 import com.barbershop.model.WorkSchedule;
 import com.barbershop.repository.MasterRepository;
+import com.barbershop.repository.TimetableRepository;
 import com.barbershop.repository.WorkScheduleRepository;
 import com.barbershop.service.WorkScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +27,8 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
 
     @Autowired
     private MasterRepository masterRepository; // Нужен для привязки
+    @Autowired
+    private TimetableRepository timetableRepository;
     private static final LocalTime MIN_OPEN_TIME = LocalTime.of(9, 0);
     private static final LocalTime MAX_CLOSE_TIME = LocalTime.of(21, 0);
     private static final int MAX_WORK_HOURS = 8;
@@ -76,6 +82,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
             scheduleToSave.setEndTime(newEnd);
 
             // Если стало "Выходной" (время null) -> Удаляем
+            checkIfAppointmentsExistOnDay(masterId, day);
             if (newStart == null) {
                 workScheduleRepository.delete(scheduleToSave);
                 return null;
@@ -105,5 +112,22 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         }
 
         return workScheduleRepository.save(scheduleToSave);
+    }
+    // Вспомогательный метод проверки
+    private void checkIfAppointmentsExistOnDay(Long masterId, DayOfWeek dayToRemove) {
+        // 1. Получаем все будущие активные записи этого мастера
+        List<Timetable> futureAppointments = timetableRepository.findByMasterIdAndStatusAndAppointmentTimeAfter(
+                masterId,
+                BookingStatus.BOOKED,
+                LocalDateTime.now()
+        );
+
+        // 2. Проверяем, попадает ли хоть одна из них на удаляемый день недели
+        boolean hasAppointmentOnThisDay = futureAppointments.stream()
+                .anyMatch(appt -> appt.getAppointmentTime().getDayOfWeek() == dayToRemove);
+
+        if (hasAppointmentOnThisDay) {
+            throw new IllegalStateException("Нельзя убрать этот рабочий день, у мастера есть активные записи. Сначала отмените их.");
+        }
     }
 }

@@ -37,9 +37,20 @@
   }
 }
 
+/* Было 60%, уменьшаем чтобы дать место тексту */
 .imageColumn {
-  width: 60%; 
+  width: 40%; 
   display: flex;
+  justify-content: center; /* Центрируем картинку */
+}
+
+/* Было 40%, увеличиваем и убираем отрицательный отступ, чтобы текст не наезжал на фото */
+.serviceColumn {
+  width: 60%;
+  display: flex;
+  flex-direction: row;
+  margin-left: 0; /* Было -90px */
+  padding-left: 40px; /* Добавляем отступ от картинки */
 }
 
 .serviceImage {
@@ -49,12 +60,6 @@
   max-height: 500px; 
 }
 
-.serviceColumn {
-  width: 40%;
-  display: flex;
-  flex-direction: row;
-  margin-left: -90px;
-}
 
 @media (max-width: 1199px) {
   .imageColumn {
@@ -75,6 +80,10 @@
   color: #333;
   font: 500 18px/48px 'Mulish', sans-serif;
   width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Делит на 2 равные колонки */
+  column-gap: 40px; /* Расстояние между колонками */
+  row-gap: 0px;    /* Расстояние между строками */
 }
 
 .serviceItem {
@@ -82,7 +91,8 @@
   justify-content: space-between;
   width: 100%;
   max-width: 400px;
-  margin: 0 auto;
+  max-width: 100%; 
+  margin: 0; /* Убираем auto margin */
   text-align: left;
 }
 
@@ -98,8 +108,27 @@
 }
 
 @media (max-width: 1199px) {
+  .pricingContainer {
+    align-self: center;
+    flex-direction: column;
+    display: flex;
+    margin-top: 20px;
+  }
+
+  .imageColumn {
+    width: 100%;
+    margin-bottom: 20px; /* Отступ картинки от текста на мобильных */
+  }
+
+  .serviceColumn {
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  /* Возвращаем 1 колонку на экранах меньше 1200px */
   .serviceList {
-    align-items: center;
+    grid-template-columns: 1fr; 
   }
   .serviceItem {
     justify-content: space-between;

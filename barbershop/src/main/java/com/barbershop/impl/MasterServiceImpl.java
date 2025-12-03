@@ -1,23 +1,27 @@
 package com.barbershop.impl;
 
+import com.barbershop.model.BookingStatus;
 import com.barbershop.model.Master;
 import com.barbershop.repository.MasterRepository;
+import com.barbershop.repository.TimetableRepository;
 import com.barbershop.service.MasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class MasterServiceImpl implements MasterService {
 
     private final MasterRepository masterRepository;
+    private final TimetableRepository timetableRepository;
 
     @Autowired
-    public MasterServiceImpl(MasterRepository masterRepository) {
+    public MasterServiceImpl(MasterRepository masterRepository, TimetableRepository timetableRepository) {
         this.masterRepository = masterRepository;
+        this.timetableRepository = timetableRepository;
     }
 
     @Override
@@ -28,15 +32,22 @@ public class MasterServiceImpl implements MasterService {
     @Override
     @Transactional
     public void deactivateMaster(Long id) {
-        Optional<Master> masterOptional = masterRepository.findById(id);
+        Master master = masterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Master not found with id: " + id));
 
-        if (masterOptional.isPresent()) {
-            Master master = masterOptional.get();
-            master.setActive(false);
-            masterRepository.save(master);
-        } else {
-            throw new RuntimeException("Master not found with id: " + id);
+        // Проверка на наличие будущих записей перед деактивацией
+        boolean hasFutureAppointments = timetableRepository.existsByMasterIdAndStatusAndAppointmentTimeAfter(
+                id,
+                BookingStatus.BOOKED,
+                LocalDateTime.now()
+        );
+
+        if (hasFutureAppointments) {
+            throw new IllegalStateException("Нельзя деактивировать мастера, у которого есть будущие активные записи. Сначала отмените их.");
         }
+
+        master.setActive(false);
+        masterRepository.save(master);
     }
     @Override
     @Transactional
