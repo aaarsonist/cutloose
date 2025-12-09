@@ -142,4 +142,5 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     List<Timetable> findByBookedByIdAndStatusAndAppointmentTimeAfter(Long userId, BookingStatus status, LocalDateTime time);
     boolean existsByMasterIdAndStatusAndAppointmentTimeAfter(Long masterId, BookingStatus status, LocalDateTime time);
     List<Timetable> findByMasterIdAndStatusAndAppointmentTimeAfter(Long masterId, BookingStatus status, LocalDateTime time);
+    boolean existsByServiceId(Long serviceId);
 }

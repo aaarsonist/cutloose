@@ -3,26 +3,35 @@ package com.barbershop.impl;
 import com.barbershop.model.ServiceEntity;
 import com.barbershop.model.ServiceType;
 import com.barbershop.repository.ServiceRepository;
+import com.barbershop.repository.TimetableRepository;
 import com.barbershop.service.ServiceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class ServiceServiceImpl implements ServiceService {
 
+    private final ServiceRepository serviceRepository;
+    private final TimetableRepository timetableRepository; // Не забудьте добавить это поле
+
     @Autowired
-    private ServiceRepository serviceRepository;
+    public ServiceServiceImpl(ServiceRepository serviceRepository, TimetableRepository timetableRepository) {
+        this.serviceRepository = serviceRepository;
+        this.timetableRepository = timetableRepository;
+    }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ServiceEntity> getAllServices() {
-        return serviceRepository.findAll();
+        return serviceRepository.findAllActiveServices();
     }
 
     @Override
     public List<ServiceEntity> getServicesByType(ServiceType type) {
-        return serviceRepository.findByType(type);
+        return serviceRepository.findActiveByType(type);
     }
 
     @Override
@@ -42,7 +51,34 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
+    @Transactional
     public void deleteService(Long id) {
-        serviceRepository.deleteById(id);
+        // 1. Проверяем, использовалась ли услуга когда-либо (есть ли записи в timetable)
+        // Нам важно сохранить историю, поэтому проверяем ЛЮБЫЕ записи (прошлые и будущие)
+        boolean hasAnyBookings = timetableRepository.existsByServiceId(id);
+
+        if (hasAnyBookings) {
+            // СЦЕНАРИЙ А: Есть история. Физически удалять нельзя -> "Мягкое" удаление.
+            ServiceEntity service = serviceRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Услуга не найдена"));
+
+            // Добавляем префикс, если его еще нет
+            if (!service.getName().startsWith("[НЕАКТИВНА]")) {
+                service.setName("[НЕАКТИВНА] " + service.getName());
+                serviceRepository.save(service);
+            }
+
+            // Здесь можно было бы добавить проверку на будущие записи,
+            // но так как мы просто "прячем" услугу переименованием,
+            // предстоящие записи (если есть) пройдут штатно, но новую создать будет нельзя.
+
+        } else {
+            // СЦЕНАРИЙ Б: История чиста. Можно удалить физически.
+            if (serviceRepository.existsById(id)) {
+                serviceRepository.deleteById(id);
+            } else {
+                throw new RuntimeException("Услуга не найдена");
+            }
+        }
     }
 }

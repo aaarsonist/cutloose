@@ -71,7 +71,7 @@ public class TimetableController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelAppointment(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<?> cancelAppointment(@PathVariable Long id, Authentication authentication) {
         String username = authentication.getName();
         User currentUser = userRepository.findByUsername(username);
 
@@ -84,7 +84,7 @@ public class TimetableController {
             return ResponseEntity.noContent().build(); // Стандартный ответ для DELETE
         } catch (RuntimeException e) {
             // Если запись не найдена или уже прошла
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             // Если пользователь пытается удалить чужую запись (AccessDeniedException)
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);

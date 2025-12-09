@@ -185,9 +185,12 @@ const handleCancelAppointment = async (appointmentId) => {
                 fetchUpcomingAppointments();
 
             } catch (error) {
-                console.error("Ошибка при отмене записи:", error);
-                toast.error("Не удалось отменить запись. " + (error.response?.data?.message || ""));
-            }
+                if (error.response && error.response.data) {
+                toast.error(error.response.data); 
+                } else {
+                    toast.error("Не удалось отменить запись");
+                }
+              }
             closeToast(); 
         };
 
@@ -243,6 +246,10 @@ const handleCancelAppointment = async (appointmentId) => {
           console.error("Error formatting date:", isoString, e);
           return 'Некорректное время';
       }
+  };
+  const formatServiceName = (serviceName) => {
+    if (!serviceName) return "";
+    return serviceName.replace("[НЕАКТИВНА] ", "");
   };
 
   return (
@@ -334,7 +341,7 @@ const handleCancelAppointment = async (appointmentId) => {
                     <li key={appointment.id} className={styles.appointmentItem}>
                         <div className={styles.appointmentDetails}>
                             <span>
-                                {appointment.service?.name || 'Услуга'}
+                                {formatServiceName(appointment.service?.name) || 'Услуга'}
                                 {' у '}
                                 {appointment.master?.name || 'Мастер'}
                             </span>
@@ -368,7 +375,7 @@ const handleCancelAppointment = async (appointmentId) => {
                      <option key={appointment.id} value={appointment.id}>
                          {formatAppointmentTime(appointment.appointmentTime)}
                          {' - '}
-                         {appointment.service?.name || 'Неизвестная услуга'}
+                         {formatServiceName(appointment.service?.name) || 'Неизвестная услуга'}
                          {' у '}
                          {appointment.master?.name || 'Неизвестного мастера'}
                      </option>

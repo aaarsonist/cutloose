@@ -200,123 +200,247 @@ function AdminAnalytics() {
     };
     
 const handleDownloadPDF = () => {
-    const doc = new jsPDF();
-    let y = 20; 
+        const doc = new jsPDF();
+        let y = 20;
 
-    doc.setFont('Mulish', 'normal');
+        doc.setFont('Mulish', 'normal');
 
-    doc.setFontSize(18);
-    doc.text("Отчет по работе салона красоты CutLoose", 14, y);
-    y += 15;
+        // === ЗАГОЛОВОК И ФИЛЬТРЫ ===
+        doc.setFontSize(18);
+        doc.text("Отчет по работе салона красоты CutLoose", 14, y);
+        y += 15;
 
-    doc.setFontSize(12);
-    doc.text("Параметры отчета:", 14, y);
-    y += 7;
+        doc.setFontSize(12);
+        doc.text("Параметры отчета:", 14, y);
+        y += 7;
 
-    doc.setFontSize(10);
-    const dateRangeStr = `Диапазон дат: ${moment(startDate).format('DD.MM.YYYY')} - ${moment(endDate).format('DD.MM.YYYY')}`;
-    doc.text(dateRangeStr, 14, y);
-    y += 7;
+        doc.setFontSize(10);
+        const dateRangeStr = `Диапазон дат: ${moment(startDate).format('DD.MM.YYYY')} - ${moment(endDate).format('DD.MM.YYYY')}`;
+        doc.text(dateRangeStr, 14, y);
+        y += 7;
 
-    let mastersStr = "Мастера: ";
-    if (selectedMasters.length === 0) {
-        mastersStr += "Все мастера";
-    } else {
-        mastersStr += selectedMasters.map(selected => 
-            masterOptions.find(opt => opt.value === selected.value)?.label
-        ).join(', ');
-    }
-    doc.text(mastersStr, 14, y);
-    y += 7;
-
-    let servicesStr = "Услуги: ";
-    if (selectedServices.length === 0) {
-        servicesStr += "Все услуги";
-    } else {
-        servicesStr += selectedServices.map(selected => 
-            serviceOptions.find(opt => opt.value === selected.value)?.label
-        ).join(', ');
-    }
-    doc.text(servicesStr, 14, y);
-    y += 15;
-
-    if (revenueChartRef.current) {
-        const revenueImg = revenueChartRef.current.toBase64Image();
-        doc.setFontSize(14);
-        doc.text("Динамика выручки (BYN)", 14, y);
-        y += 5;
-        doc.addImage(revenueImg, 'PNG', 14, y, 180, 90);
-        y += 100;
-    }
-
-    if (visitChartRef.current) {
-        const visitImg = visitChartRef.current.toBase64Image();
-        doc.setFontSize(14);
-        doc.text("Динамика посещений (кол-во)", 14, y);
-        y += 5;
-        doc.addImage(visitImg, 'PNG', 14, y, 180, 90);
-        y += 100;
-    }
-
-    if (y > 250) {
-        doc.addPage();
-        y = 20;
-    }
-
-    const tableStyles = {
-        font: 'Mulish',
-        fontStyle: 'normal'
-    };
-
-    if (masterData && masterData.masterPerformanceData.length > 0) {
-        doc.setFontSize(14);
-        doc.text("Эффективность мастеров", 14, y);
-        y += 10;
-
-        const masterHead = [['Мастер', 'Записей', 'Выручка', 'Сред. оценка']];
-        const masterBody = masterData.masterPerformanceData.map(m => [
-            m.masterFullName,
-            m.appointmentCount,
-            formatCurrency(m.totalRevenue), 
-            m.averageRating ? m.averageRating.toFixed(1) : 'N/A'
-        ]);
-
-        autoTable(doc, {
-            startY: y,
-            head: masterHead,
-            body: masterBody,
-            theme: 'grid',
-            styles: tableStyles 
-        });
-        y = doc.lastAutoTable.finalY + 15;
-    }
-
-    if (serviceData && serviceData.averageRatings.length > 0) {
-        if (y > 250) {
-            doc.addPage();
-            y = 20;
+        let mastersStr = "Мастера: ";
+        if (selectedMasters.length === 0) {
+            mastersStr += "Все мастера";
+        } else {
+            mastersStr += selectedMasters.map(selected =>
+                masterOptions.find(opt => opt.value === selected.value)?.label
+            ).join(', ');
         }
-        doc.setFontSize(14);
-        doc.text("Средние оценки услуг", 14, y); 
-        y += 10;
+        // Обрезка слишком длинных строк мастеров
+        if (mastersStr.length > 90) mastersStr = mastersStr.substring(0, 90) + "...";
+        doc.text(mastersStr, 14, y);
+        y += 7;
 
-        const serviceHead = [['Услуга', 'Сред. оценка']];
-        const serviceBody = serviceData.averageRatings.map(s => [
-            s.serviceName,
-            s.averageRating ? `${s.averageRating.toFixed(1)} ${renderStars(s.averageRating)}` : 'N/A' 
-        ]);
+        let servicesStr = "Услуги: ";
+        if (selectedServices.length === 0) {
+            servicesStr += "Все услуги";
+        } else {
+            servicesStr += selectedServices.map(selected =>
+                serviceOptions.find(opt => opt.value === selected.value)?.label
+            ).join(', ');
+        }
+        if (servicesStr.length > 90) servicesStr = servicesStr.substring(0, 90) + "...";
+        doc.text(servicesStr, 14, y);
+        y += 15;
 
-        autoTable(doc, {
-            startY: y,
-            head: serviceHead,
-            body: serviceBody,
-            theme: 'grid',
-            styles: tableStyles
-        });
-    }
+        // === НОВЫЙ БЛОК: KPI (Показатели из карточек) ===
+        if (extendedData) {
+            doc.setFontSize(14);
+            doc.text("Ключевые показатели эффективности (KPI)", 14, y);
+            y += 8;
 
-    doc.save(`analytics_report_${moment(startDate).format('YYYY-MM-DD')}.pdf`);
-};
+            doc.setFontSize(10);
+
+            // 1. Выручка
+            let revenueText = `Общая выручка: ${formatCurrency(extendedData.totalRevenue)}`;
+            if (extendedData.totalRevenueTrend != null) {
+                const symbol = extendedData.totalRevenueTrend >= 0 ? "▲" : "▼";
+                revenueText += ` (${symbol} ${Math.abs(extendedData.totalRevenueTrend).toFixed(1)}% к пред. периоду)`;
+            }
+            doc.text(revenueText, 14, y);
+            y += 6;
+
+            // 2. Удержание
+            const retention = extendedData.retentionRate ? extendedData.retentionRate.toFixed(1) : 0;
+            doc.text(`Коэффициент удержания: ${retention}% клиентов вернулись за повторной услугой`, 14, y);
+            y += 6;
+
+            // 3. Топ мастер
+            if (extendedData.topMasterName) {
+                doc.text(`Топ мастер: ${extendedData.topMasterName}`, 14, y);
+                y += 5;
+                doc.setTextColor(100); // Серый цвет для деталей
+                doc.text(`   Рейтинг: ${extendedData.topMasterRating?.toFixed(2)} | Выручка: ${formatCurrency(extendedData.topMasterRevenue)}`, 14, y);
+                doc.setTextColor(0); // Возвращаем черный
+            } else {
+                doc.text(`Топ мастер: Нет данных`, 14, y);
+            }
+            y += 15;
+        }
+
+        const tableStyles = {
+            font: 'Mulish',
+            fontStyle: 'normal'
+        };
+
+        // === НОВЫЙ БЛОК: ТАБЛИЦЫ КАТЕГОРИЙ И ТОП УСЛУГ ===
+        // Вместо диаграмм выведем аккуратные таблицы, так как это надежнее для PDF
+        if (extendedData) {
+            // -- Таблица категорий --
+            const catMeta = { HAIR: 'Волосы', FACE: 'Лицо', NAILS: 'Ногти', BEARD: 'Борода' };
+            const dist = extendedData.categoryDistribution || {};
+            const totalCounts = Object.values(dist).reduce((a, b) => a + b, 0);
+
+            const categoryBody = Object.keys(catMeta)
+                .map(key => {
+                    const count = dist[key] || 0;
+                    const percent = totalCounts > 0 ? ((count / totalCounts) * 100).toFixed(1) + '%' : '0%';
+                    return [catMeta[key], count, percent];
+                })
+                .sort((a, b) => b[1] - a[1]); // Сортировка по убыванию
+
+            if (categoryBody.length > 0) {
+                doc.setFontSize(12);
+                doc.text("Доли категорий услуг", 14, y);
+                y += 5;
+
+                autoTable(doc, {
+                    startY: y,
+                    head: [['Категория', 'Кол-во', 'Доля']],
+                    body: categoryBody,
+                    theme: 'grid',
+                    styles: tableStyles,
+                    headStyles: { fillColor: [255, 153, 102] } // Оранжевый оттенок
+                });
+                y = doc.lastAutoTable.finalY + 10;
+            }
+
+            // -- Таблица топ услуг --
+            const topServices = extendedData.topServices || [];
+            if (topServices.length > 0) {
+                // Проверка места на странице
+                if (y > 240) { doc.addPage(); y = 20; }
+
+                doc.setFontSize(12);
+                doc.text("Топ популярных услуг", 14, y);
+                y += 5;
+
+                const topBody = topServices.map(s => [s.serviceName, s.usageCount]);
+
+                autoTable(doc, {
+                    startY: y,
+                    head: [['Услуга', 'Количество записей']],
+                    body: topBody,
+                    theme: 'grid',
+                    styles: tableStyles,
+                    headStyles: { fillColor: [240, 165, 0] } // Желто-оранжевый
+                });
+                y = doc.lastAutoTable.finalY + 15;
+            }
+        }
+
+        // Проверка места перед графиками
+        if (salesData && salesData.dailyRevenueDataPoints && salesData.dailyRevenueDataPoints.length > 0) {
+            if (y > 240) { doc.addPage(); y = 20; }
+            
+            doc.setFontSize(14);
+            doc.text("Динамика выручки по дням", 14, y);
+            y += 10;
+
+            const revenueHead = [['Дата', 'Выручка']];
+            const revenueBody = salesData.dailyRevenueDataPoints.map(dp => [
+                formatLocalDate(dp.date),
+                formatCurrency(dp.totalRevenue)
+            ]);
+
+            autoTable(doc, {
+                startY: y,
+                head: revenueHead,
+                body: revenueBody,
+                theme: 'grid',
+                styles: tableStyles,
+                // Можно добавить чередование цветов для читаемости длинных таблиц
+                alternateRowStyles: { fillColor: [245, 245, 245] }
+            });
+            y = doc.lastAutoTable.finalY + 15;
+        }
+
+        // === НОВОЕ: ТАБЛИЦА ДИНАМИКИ ПОСЕЩЕНИЙ (Вместо графика) ===
+        if (serviceData && serviceData.visitData && serviceData.visitData.length > 0) {
+            if (y > 240) { doc.addPage(); y = 20; }
+
+            doc.setFontSize(14);
+            doc.text("Динамика посещений по дням", 14, y);
+            y += 10;
+
+            const visitsHead = [['Дата', 'Количество записей']];
+            const visitsBody = serviceData.visitData.map(dp => [
+                formatLocalDate(dp.date),
+                dp.totalVisits
+            ]);
+
+            autoTable(doc, {
+                startY: y,
+                head: visitsHead,
+                body: visitsBody,
+                theme: 'grid',
+                styles: tableStyles,
+                alternateRowStyles: { fillColor: [245, 245, 245] }
+            });
+            y = doc.lastAutoTable.finalY + 15;
+        }
+
+        // === ТАБЛИЦЫ ЭФФЕКТИВНОСТИ (Как и было) ===
+        if (masterData && masterData.masterPerformanceData.length > 0) {
+            doc.setFontSize(14);
+            doc.text("Эффективность мастеров", 14, y);
+            y += 10;
+
+            const masterHead = [['Мастер', 'Записей', 'Выручка', 'Сред. оценка']];
+            const masterBody = masterData.masterPerformanceData.map(m => [
+                m.masterFullName,
+                m.appointmentCount,
+                formatCurrency(m.totalRevenue),
+                m.averageRating ? m.averageRating.toFixed(1) : 'N/A'
+            ]);
+
+            autoTable(doc, {
+                startY: y,
+                head: masterHead,
+                body: masterBody,
+                theme: 'grid',
+                styles: tableStyles
+            });
+            y = doc.lastAutoTable.finalY + 15;
+        }
+
+        if (serviceData && serviceData.averageRatings.length > 0) {
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+            doc.setFontSize(14);
+            doc.text("Средние оценки услуг", 14, y);
+            y += 10;
+
+            const serviceHead = [['Услуга', 'Сред. оценка']];
+            const serviceBody = serviceData.averageRatings.map(s => [
+                s.serviceName,
+                s.averageRating ? `${s.averageRating.toFixed(1)} ${renderStars(s.averageRating)}` : 'N/A'
+            ]);
+
+            autoTable(doc, {
+                startY: y,
+                head: serviceHead,
+                body: serviceBody,
+                theme: 'grid',
+                styles: tableStyles
+            });
+        }
+
+        doc.save(`analytics_report_${moment(startDate).format('YYYY-MM-DD')}.pdf`);
+    };
     // Данные для Круговой диаграммы (КАТЕГОРИИ)
     // 1. Метаданные категорий: Название и Цвет (фиксированные)
     const categoryMeta = {
