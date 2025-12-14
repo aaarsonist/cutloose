@@ -6,11 +6,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 public class AdminBookingRequestDto {
-    // Данные клиента
     private String clientName;
     private String clientEmail;
 
-    // Данные записи
     private Long masterId;
     private Long serviceId;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")

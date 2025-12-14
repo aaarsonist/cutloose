@@ -47,7 +47,6 @@ public class TimetableServiceImpl implements TimetableService {
     @Transactional(readOnly = true)
     public List<AppointmentDto> getAllAppointments() {
         List<Timetable> appointments = timetableRepository.findAll();
-        // Конвертируем Timetable в AppointmentDto
         return appointments.stream().map(this::mapToDto).collect(Collectors.toList());
     }
     @Override
@@ -57,7 +56,6 @@ public class TimetableServiceImpl implements TimetableService {
                 .orElseThrow(() -> new RuntimeException("Пользователь с ID " + userId + " не найден"));
 
         if (timetable.getService() != null) {
-            // Подгружаем актуальное состояние услуги из БД, если в объекте timetable неполные данные
             ServiceEntity service = serviceRepository.findById(timetable.getService().getId())
                     .orElseThrow(() -> new RuntimeException("Услуга не найдена"));
 
@@ -72,13 +70,11 @@ public class TimetableServiceImpl implements TimetableService {
 
     @Override
     public List<Timetable> getCompletedAppointmentsForUser(Long userId) {
-        // --- ИСПРАВЛЕНИЕ: Вызываем исправленный метод репозитория ---
         return timetableRepository.findByBookedByIdAndStatus(userId, BookingStatus.COMPLETED);
     }
 
     @Override
     public List<Timetable> getUpcomingAppointmentsForUser(Long userId) {
-        // --- ИСПРАВЛЕНИЕ: Вызываем исправленный метод репозитория ---
         return timetableRepository.findByBookedByIdAndStatusAndAppointmentTimeAfter(userId, BookingStatus.BOOKED, LocalDateTime.now());
     }
 
@@ -88,17 +84,14 @@ public class TimetableServiceImpl implements TimetableService {
         Timetable appointment = timetableRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Запись не найдена."));
 
-        // Проверка прав доступа
         if (!appointment.getBookedBy().getId().equals(userId)) {
             throw new AccessDeniedException("Вы не можете удалить чужую запись.");
         }
 
-        // Проверка статуса
         if (appointment.getStatus() != BookingStatus.BOOKED) {
             throw new RuntimeException("Нельзя отменить завершенную запись.");
         }
 
-        // --- НОВАЯ ПРОВЕРКА ВРЕМЕНИ (20 минут) ---
         long minutesUntilStart = ChronoUnit.MINUTES.between(LocalDateTime.now(), appointment.getAppointmentTime());
 
         if (minutesUntilStart < 20) {
@@ -112,7 +105,6 @@ public class TimetableServiceImpl implements TimetableService {
         AppointmentDto dto = new AppointmentDto();
         dto.setId(t.getId());
 
-        // Проверяем, что связанные сущности не null
         String serviceName = (t.getService() != null) ? t.getService().getName() : "Услуга";
         String masterName = (t.getMaster() != null) ? t.getMaster().getName() : "Мастер";
         Integer duration = (t.getService() != null) ? t.getService().getDuration() : 60;
@@ -122,19 +114,16 @@ public class TimetableServiceImpl implements TimetableService {
 
         if (t.getBookedBy() != null) {
             clientName = t.getBookedBy().getName();
-            // Мы используем .getUsername() для email, как в вашей модели User.java
             clientEmail = t.getBookedBy().getUsername();
         } else {
             clientName = "Клиент";
             clientEmail = "N/A";
         }
 
-        // Формируем данные для календаря
         dto.setTitle(serviceName + " (" + masterName + ")");
         dto.setStart(t.getAppointmentTime());
         dto.setEnd(t.getAppointmentTime().plusMinutes(duration));
 
-        // Данные для модального окна
         dto.setServiceName(serviceName);
         dto.setMasterName(masterName);
         dto.setClientName(clientName);
@@ -147,25 +136,18 @@ public class TimetableServiceImpl implements TimetableService {
     @Override
     @Transactional
     public void adminCancelAppointment(Long id) {
-        // 1. Находим запись в БД
         Timetable appointment = timetableRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Запись не найдена с id: " + id));
 
-        // 2. ПРОВЕРЯЕМ ДАТУ! (Ваша логика)
         if (appointment.getAppointmentTime().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Нельзя отменить прошедшую запись.");
         }
-
-        // 3. Если проверка пройдена (запись в будущем), удаляем отзывы
         reviewRepository.deleteByAppointmentId(id);
-
-        // 4. ...и саму запись
         timetableRepository.deleteById(id);
     }
     @Override
     @Transactional
     public Timetable adminBookAppointment(AdminBookingRequestDto request) {
-        // 1. Находим или создаем "гостевого" пользователя
         User client = userService.findOrCreateGuestUser(request.getClientEmail(), request.getClientName());
 
         Master master = masterRepository.findById(request.getMasterId())
@@ -173,7 +155,6 @@ public class TimetableServiceImpl implements TimetableService {
         ServiceEntity service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new RuntimeException("Service not found"));
 
-        // 3. Создаем новую запись
         Timetable newAppointment = new Timetable();
         newAppointment.setBookedBy(client);
         newAppointment.setMaster(master);

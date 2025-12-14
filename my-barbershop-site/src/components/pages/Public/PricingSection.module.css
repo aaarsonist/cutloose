@@ -37,20 +37,18 @@
   }
 }
 
-/* Было 60%, уменьшаем чтобы дать место тексту */
 .imageColumn {
   width: 40%; 
   display: flex;
-  justify-content: center; /* Центрируем картинку */
+  justify-content: center; 
 }
 
-/* Было 40%, увеличиваем и убираем отрицательный отступ, чтобы текст не наезжал на фото */
 .serviceColumn {
   width: 60%;
   display: flex;
   flex-direction: row;
-  margin-left: 0; /* Было -90px */
-  padding-left: 40px; /* Добавляем отступ от картинки */
+  margin-left: 0; 
+  padding-left: 40px; 
 }
 
 .serviceImage {
@@ -81,9 +79,9 @@
   font: 500 18px/48px 'Mulish', sans-serif;
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Делит на 2 равные колонки */
-  column-gap: 40px; /* Расстояние между колонками */
-  row-gap: 0px;    /* Расстояние между строками */
+  grid-template-columns: 1fr 1fr; 
+  column-gap: 40px; 
+  row-gap: 0px;    
 }
 
 .serviceItem {
@@ -92,7 +90,7 @@
   width: 100%;
   max-width: 400px;
   max-width: 100%; 
-  margin: 0; /* Убираем auto margin */
+  margin: 0; 
   text-align: left;
 }
 
@@ -117,7 +115,7 @@
 
   .imageColumn {
     width: 100%;
-    margin-bottom: 20px; /* Отступ картинки от текста на мобильных */
+    margin-bottom: 20px; 
   }
 
   .serviceColumn {
@@ -126,7 +124,6 @@
     padding-left: 0;
   }
 
-  /* Возвращаем 1 колонку на экранах меньше 1200px */
   .serviceList {
     grid-template-columns: 1fr; 
   }

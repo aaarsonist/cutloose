@@ -24,14 +24,13 @@ class TimetableServiceTest {
     @Mock
     private TimetableRepository timetableRepository;
     @Mock
-    private ReviewRepository reviewRepository; // Needed for constructor injection
+    private ReviewRepository reviewRepository;
 
     @InjectMocks
     private TimetableServiceImpl timetableService;
 
     @Test
     void cancelAppointment_ShouldThrowException_WhenUserCancelsSomeoneElseBooking() {
-        // ARRANGE
         Long appointmentId = 100L;
         Long currentUserId = 1L;
         Long otherUserId = 2L;
@@ -41,13 +40,11 @@ class TimetableServiceTest {
 
         Timetable appointment = new Timetable();
         appointment.setId(appointmentId);
-        appointment.setBookedBy(otherUser); // Запись создана другим пользователем
+        appointment.setBookedBy(otherUser);
         appointment.setStatus(BookingStatus.BOOKED);
 
         when(timetableRepository.findById(appointmentId)).thenReturn(Optional.of(appointment));
 
-        // ACT & ASSERT
-        // Проверяем, что выбрасывается AccessDeniedException
         AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
             timetableService.cancelAppointment(appointmentId, currentUserId);
         });
@@ -58,7 +55,6 @@ class TimetableServiceTest {
 
     @Test
     void cancelAppointment_ShouldThrowException_WhenCancelingCompletedBooking() {
-        // ARRANGE
         Long appointmentId = 100L;
         Long userId = 1L;
 
@@ -68,11 +64,10 @@ class TimetableServiceTest {
         Timetable appointment = new Timetable();
         appointment.setId(appointmentId);
         appointment.setBookedBy(user);
-        appointment.setStatus(BookingStatus.COMPLETED); // Запись уже завершена
+        appointment.setStatus(BookingStatus.COMPLETED);
 
         when(timetableRepository.findById(appointmentId)).thenReturn(Optional.of(appointment));
 
-        // ACT & ASSERT
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             timetableService.cancelAppointment(appointmentId, userId);
         });
@@ -82,7 +77,6 @@ class TimetableServiceTest {
 
     @Test
     void cancelAppointment_ShouldDelete_WhenUserIsOwnerAndStatusBooked() {
-        // ARRANGE
         Long appointmentId = 100L;
         Long userId = 1L;
 
@@ -96,10 +90,8 @@ class TimetableServiceTest {
 
         when(timetableRepository.findById(appointmentId)).thenReturn(Optional.of(appointment));
 
-        // ACT
         timetableService.cancelAppointment(appointmentId, userId);
 
-        // ASSERT
         verify(timetableRepository).delete(appointment);
     }
 }

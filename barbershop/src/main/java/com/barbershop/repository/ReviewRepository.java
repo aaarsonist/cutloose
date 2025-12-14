@@ -53,7 +53,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             "appointment.bookedBy"
     })
     List<Review> findAll();
-    @Modifying // Обязательно для операций DELETE
+    @Modifying
     @Query("DELETE FROM Review r WHERE r.appointment.id = :appointmentId")
     void deleteByAppointmentId(@Param("appointmentId") Long appointmentId);
 }

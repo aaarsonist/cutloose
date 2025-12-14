@@ -8,15 +8,12 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function AdminDashboard() {
-    // 1. Инициализируем состояние вкладки из localStorage (или 'management' по умолчанию)
     const [activeTab, setActiveTab] = useState(() => {
         return localStorage.getItem('adminActiveTab') || 'management';
     });
     
-    // По умолчанию панель скрыта (false), чтобы она "появлялась" при наведении
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // 2. Сохраняем выбранную вкладку в localStorage при каждом изменении
     useEffect(() => {
         localStorage.setItem('adminActiveTab', activeTab);
     }, [activeTab]);
@@ -34,20 +31,16 @@ function AdminDashboard() {
                 pauseOnHover
             />
 
-            {/* Кнопка "Бургер" */}
             <button 
                 className={styles.hamburgerBtn} 
                 onClick={toggleSidebar}
-                // Открываем панель при наведении на кнопку
                 onMouseEnter={() => setIsSidebarOpen(true)}
             >
                 ☰
             </button>
 
-            {/* Сайдбар */}
             <div 
                 className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarClosed : ''}`}
-                // Закрываем панель, когда курсор уходит с неё
                 onMouseLeave={() => setIsSidebarOpen(false)}
             >
                 <h3>Панель управления</h3>

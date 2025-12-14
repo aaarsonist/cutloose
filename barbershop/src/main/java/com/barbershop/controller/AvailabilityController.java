@@ -31,15 +31,12 @@ public class AvailabilityController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
 
-        // 1. Получаем список объектов LocalTime (как в вашем сервисе)
         List<LocalTime> localTimeSlots = availabilityService.getAvailableSlots(masterId, serviceId, date);
 
-        // 2. Конвертируем List<LocalTime> в List<String>
         List<String> stringSlots = localTimeSlots.stream()
-                .map(slot -> slot.format(TIME_FORMATTER)) // Превращаем LocalTime в строку "HH:mm"
+                .map(slot -> slot.format(TIME_FORMATTER))
                 .collect(Collectors.toList());
 
-        // 3. Отправляем список строк на фронтенд
         return ResponseEntity.ok(stringSlots);
     }
 }

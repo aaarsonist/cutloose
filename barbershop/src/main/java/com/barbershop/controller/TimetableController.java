@@ -81,12 +81,10 @@ public class TimetableController {
 
         try {
             timetableService.cancelAppointment(id, currentUser.getId());
-            return ResponseEntity.noContent().build(); // Стандартный ответ для DELETE
+            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            // Если запись не найдена или уже прошла
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            // Если пользователь пытается удалить чужую запись (AccessDeniedException)
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
     }
@@ -95,12 +93,10 @@ public class TimetableController {
     public ResponseEntity<Void> adminDeleteAppointment(@PathVariable Long id) {
         try {
             timetableService.adminCancelAppointment(id);
-            return ResponseEntity.ok().build(); // 200 OK
+            return ResponseEntity.ok().build();
         } catch (IllegalStateException e) {
-            // 400 Bad Request (Нельзя отменить прошедшую запись)
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            // 404 Not Found (Запись не найдена)
             return ResponseEntity.notFound().build();
         }
     }
@@ -111,7 +107,6 @@ public class TimetableController {
             Timetable newAppointment = timetableService.adminBookAppointment(request);
             return ResponseEntity.ok(newAppointment);
         } catch (Exception e) {
-            // (На случай, если мастер/услуга не найдены)
             return ResponseEntity.badRequest().build();
         }
     }

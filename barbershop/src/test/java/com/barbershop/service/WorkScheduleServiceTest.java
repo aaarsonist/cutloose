@@ -35,18 +35,15 @@ class WorkScheduleServiceTest {
 
     @Test
     void updateSchedule_ShouldThrowException_WhenShiftExceeds8Hours() {
-        // ARRANGE
         Master master = new Master();
         master.setId(1L);
 
         WorkSchedule schedule = new WorkSchedule();
         schedule.setMaster(master);
         schedule.setDayOfWeek(DayOfWeek.MONDAY);
-        // С 09:00 до 18:00 (9 часов) - это нарушение правила
         schedule.setStartTime(LocalTime.of(9, 0));
         schedule.setEndTime(LocalTime.of(18, 0));
 
-        // ACT & ASSERT
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             workScheduleService.updateSchedule(schedule);
         });
@@ -56,18 +53,15 @@ class WorkScheduleServiceTest {
 
     @Test
     void updateSchedule_ShouldThrowException_WhenTimeIsOutsideWorkingHours() {
-        // ARRANGE
         Master master = new Master();
         master.setId(1L);
 
         WorkSchedule schedule = new WorkSchedule();
         schedule.setMaster(master);
         schedule.setDayOfWeek(DayOfWeek.MONDAY);
-        // С 08:00 (раньше открытия)
         schedule.setStartTime(LocalTime.of(8, 0));
         schedule.setEndTime(LocalTime.of(12, 0));
 
-        // ACT & ASSERT
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             workScheduleService.updateSchedule(schedule);
         });
@@ -77,7 +71,6 @@ class WorkScheduleServiceTest {
 
     @Test
     void updateSchedule_ShouldThrowException_WhenStartIsAfterEnd() {
-        // ARRANGE
         Master master = new Master();
         master.setId(1L);
 
@@ -85,9 +78,8 @@ class WorkScheduleServiceTest {
         schedule.setMaster(master);
         schedule.setDayOfWeek(DayOfWeek.MONDAY);
         schedule.setStartTime(LocalTime.of(14, 0));
-        schedule.setEndTime(LocalTime.of(12, 0)); // Ошибка логики
+        schedule.setEndTime(LocalTime.of(12, 0));
 
-        // ACT & ASSERT
         assertThrows(IllegalArgumentException.class, () -> {
             workScheduleService.updateSchedule(schedule);
         });
@@ -95,7 +87,6 @@ class WorkScheduleServiceTest {
 
     @Test
     void updateSchedule_ShouldSave_WhenDataIsValid() {
-        // ARRANGE
         Master master = new Master();
         master.setId(1L);
 
@@ -103,17 +94,15 @@ class WorkScheduleServiceTest {
         schedule.setMaster(master);
         schedule.setDayOfWeek(DayOfWeek.MONDAY);
         schedule.setStartTime(LocalTime.of(10, 0));
-        schedule.setEndTime(LocalTime.of(16, 0)); // 6 часов - OK
+        schedule.setEndTime(LocalTime.of(16, 0));
 
         when(workScheduleRepository.findByMasterIdAndDayOfWeek(1L, DayOfWeek.MONDAY))
-                .thenReturn(Optional.empty()); // Создаем новую
+                .thenReturn(Optional.empty());
         when(masterRepository.findById(1L)).thenReturn(Optional.of(master));
         when(workScheduleRepository.save(any(WorkSchedule.class))).thenReturn(schedule);
 
-        // ACT
         WorkSchedule result = workScheduleService.updateSchedule(schedule);
 
-        // ASSERT
         assertNotNull(result);
         verify(workScheduleRepository).save(any(WorkSchedule.class));
     }

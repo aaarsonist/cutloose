@@ -8,9 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-// ДОБАВИТЬ ИМПОРТ Authentication ЕСЛИ НУЖНО ДЛЯ ПОЛУЧЕНИЯ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ (уже добавлено в Impl)
-// import org.springframework.security.core.Authentication;
-
 import java.util.List;
 
 @RestController
@@ -28,9 +25,8 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getAllReviews());
     }
     @PostMapping
-    // Этот эндпоинт должен быть доступен аутентифицированным пользователям (USER или ADMIN)
-    // @PreAuthorize("isAuthenticated()") // Или hasAnyRole('USER', 'ADMIN') - нужно настроить @EnableMethodSecurity в SecurityConfig
-    public ResponseEntity<Review> addReview(@RequestBody Review review /*, Authentication authentication */) {
+
+    public ResponseEntity<Review> addReview(@RequestBody Review review) {
         if (review.getReviewText() == null || review.getReviewText().trim().isEmpty() ||
                 review.getRating() < 1 || review.getRating() > 5 ||
                 review.getAppointment() == null || review.getAppointment().getId() == null) {

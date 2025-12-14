@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../../api/api';
-import styles from './AdminDashboard.module.css'; // Используем те же стили
+import styles from './AdminDashboard.module.css'; 
 
 import {
     Chart as ChartJS,
@@ -13,7 +13,6 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
-// Регистрируем компоненты Chart.js, необходимые для этого графика
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 function AdminForecast() {
@@ -36,21 +35,20 @@ function AdminForecast() {
         fetchForecast();
     }, []);
 
-    // Настройки графика
     const forecastChartData = {
         labels: forecastData.map(d => d.dayOfWeekRussian),
         datasets: [
             {
                 label: 'Предложение (часы)',
                 data: forecastData.map(d => d.supplyHours.toFixed(1)),
-                backgroundColor: 'rgba(54, 162, 235, 0.6)', // Синий
+                backgroundColor: 'rgba(54, 162, 235, 0.6)', 
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1,
             },
             {
                 label: 'Спрос (сред. часы)',
                 data: forecastData.map(d => d.demandHours.toFixed(1)),
-                backgroundColor: 'rgba(255, 159, 64, 0.6)', // Оранжевый
+                backgroundColor: 'rgba(255, 159, 64, 0.6)', 
                 borderColor: 'rgba(255, 159, 64, 1)',
                 borderWidth: 1,
             }
@@ -81,7 +79,6 @@ function AdminForecast() {
             <h3>Прогноз спроса и рекомендации</h3>
 
             <div className={styles.dashboardGrid}>
-                {/* Виджет для графика */}
                 <div className={styles.widget}>
                     <h3>Прогноз спроса vs предложение (в часах)</h3>
                     {forecastData.length > 0 ? (
@@ -91,7 +88,6 @@ function AdminForecast() {
                     ) : "Нет данных для прогноза"}
                 </div>
 
-                {/* Виджет для рекомендаций */}
                 <div className={styles.widget}>
                     <h3>Рекомендации по оптимизации</h3>
                     <ul className={styles.recommendationList}>

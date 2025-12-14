@@ -4,7 +4,7 @@ import com.barbershop.model.BookingStatus;
 import com.barbershop.model.Timetable;
 import com.barbershop.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.EntityGraph; // Для жадной загрузки связанных сущностей
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -102,13 +102,11 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
             "ORDER BY totalRevenue DESC")
     List<Object[]> getMastersPerformanceData(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
-    // 1. Для среднего чека
     @Query("SELECT SUM(s.price), COUNT(t) " +
             "FROM Timetable t JOIN t.service s " +
             "WHERE t.status = 'COMPLETED' AND t.appointmentTime BETWEEN :start AND :end")
     List<Object[]> getRevenueAndCount(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    //2. Группировка по CATEGORY
     @Query("SELECT s.category, COUNT(t) " +
             "FROM Timetable t JOIN t.service s " +
             "WHERE t.status = com.barbershop.model.BookingStatus.COMPLETED " +
@@ -116,26 +114,24 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
             "GROUP BY s.category")
     List<Object[]> getCategoryDistribution(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    // 3. Топ услуг (для воронки)
     @Query("SELECT s.name, COUNT(t) as cnt " +
             "FROM Timetable t JOIN t.service s " +
-            "WHERE t.status = 'COMPLETED' AND t.appointmentTime BETWEEN :start AND :end " + // <--- ИСПРАВЛЕНО
+            "WHERE t.status = 'COMPLETED' AND t.appointmentTime BETWEEN :start AND :end " +
             "GROUP BY s.name " +
             "ORDER BY cnt DESC " +
             "LIMIT 5")
     List<Object[]> getTopServices(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    // 4. Удержание
     @Query("SELECT COUNT(DISTINCT t.bookedBy.id) " +
             "FROM Timetable t " +
             "WHERE t.status = 'COMPLETED' " +
-            "AND t.appointmentTime BETWEEN :start AND :end " + // <--- ИСПРАВЛЕНО
+            "AND t.appointmentTime BETWEEN :start AND :end " +
             "AND (SELECT COUNT(t2) FROM Timetable t2 WHERE t2.bookedBy.id = t.bookedBy.id AND t2.status = 'COMPLETED') > 1")
     Long countReturningClients(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("SELECT COUNT(DISTINCT t.bookedBy.id) " +
             "FROM Timetable t " +
-            "WHERE t.status = 'COMPLETED' AND t.appointmentTime BETWEEN :start AND :end") // <--- ИСПРАВЛЕНО
+            "WHERE t.status = 'COMPLETED' AND t.appointmentTime BETWEEN :start AND :end")
     Long countTotalClientsInPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     List<Timetable> findByBookedByIdAndStatus(Long userId, BookingStatus status);
 

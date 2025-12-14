@@ -59,7 +59,7 @@ public class ReportServiceImpl implements ReportService {
             System.out.println(">>> DEBUG: ReportServiceImpl calling getMasterPerformanceReportData with startDate: " + startDate + ", endDate: " + endDate + ", masterIds: " + masterIds);
             report.setMasterReportData(getMasterPerformanceReportData(startDate, endDate, masterIds, serviceIds));
         }
-        else if ("sales".equals(reportType)) { // *** ДОБАВЛЕНО: Обработка типа "sales" ***
+        else if ("sales".equals(reportType)) {
             System.out.println(">>> DEBUG: ReportServiceImpl calling getSalesReportData with startDate: " + startDate + ", endDate: " + endDate + ", serviceIds: " + serviceIds + ", masterIds: " + masterIds);
             report.setSalesReportData(getSalesReportData(startDate, endDate, serviceIds, masterIds));
         }
@@ -168,34 +168,25 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private SalesReportDataDto getSalesReportData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds, List<Long> masterIds) {
-        // 1. Получаем суммарную стоимость записей по дням с фильтрами
         List<Object[]> dailyRevenueRaw = timetableRepository.sumServicePricesByDay(startDate, endDate, serviceIds, masterIds);
 
-        // Преобразуем сырые данные в List<DailyRevenueDataPointDto>
         List<DailyRevenueDataPointDto> dailyRevenueDataPoints = dailyRevenueRaw.stream()
                 .map(row -> {
                     DailyRevenueDataPointDto dto = new DailyRevenueDataPointDto();
-                    // Индекс 0 - дата (java.sql.Date или LocalDate)
                     if (row[0] instanceof java.sql.Date) {
                         dto.setDate(((java.sql.Date) row[0]).toLocalDate());
                     } else if (row[0] instanceof LocalDate) {
                         dto.setDate((LocalDate) row[0]);
                     } else {
-                        // Если тип даты неожиданный
                         System.err.println(">>> WARNING: Unexpected date type in daily revenue: " + row[0]);
-                        // Можно пропустить эту точку или установить null/другую дату по умолчанию
-                        return null; // Пропускаем некорректные точки
+                        return null;
                     }
 
-
-                    // Индекс 1 - суммарная стоимость (BigDecimal, Double или другой числовой тип)
                     Object rawRevenue = row[1];
                     BigDecimal revenue;
                     if (rawRevenue instanceof Number) {
-                        // Преобразуем любое числовое значение в BigDecimal
                         revenue = BigDecimal.valueOf(((Number) rawRevenue).doubleValue());
                     } else {
-                        // Если это не число (что маловероятно для SUM)
                         revenue = BigDecimal.ZERO;
                         System.err.println(">>> WARNING: Unexpected revenue type in daily revenue: " + rawRevenue);
                     }
@@ -203,8 +194,8 @@ public class ReportServiceImpl implements ReportService {
 
                     return dto;
                 })
-                .filter(Objects::nonNull) // Отфильтровываем точки, которые вернули null (из-за некорректной даты)
-                .sorted(Comparator.comparing(DailyRevenueDataPointDto::getDate)) // Сортируем по дате
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(DailyRevenueDataPointDto::getDate))
                 .collect(Collectors.toList());
 
         SalesReportDataDto salesReportData = new SalesReportDataDto();
@@ -214,20 +205,16 @@ public class ReportServiceImpl implements ReportService {
     }
     @Override
     public SalesReportDataDto getSalesData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds, List<Long> masterIds) {
-        // Просто вызываем ваш существующий приватный метод
         return getSalesReportData(startDate, endDate, serviceIds, masterIds);
     }
 
     @Override
     public ServiceReportDataDto getServiceData(LocalDateTime startDate, LocalDateTime endDate, List<Long> serviceIds, List<Long> masterIds) {
-        // Просто вызываем ваш существующий приватный метод
-        // Обратите внимание: ваш метод не принимал masterIds, и я это уважаю
         return getServicePerformanceReportData(startDate, endDate, serviceIds, masterIds);
     }
 
     @Override
     public MasterReportDataDto getMasterData(LocalDateTime startDate, LocalDateTime endDate, List<Long> masterIds, List<Long> serviceIds) {
-        // Вызываем приватный метод, передавая serviceIds
         return getMasterPerformanceReportData(startDate, endDate, masterIds, serviceIds);
     }
 
@@ -235,25 +222,20 @@ public class ReportServiceImpl implements ReportService {
     public ExtendedAnalyticsDto getExtendedAnalytics(LocalDateTime start, LocalDateTime end) {
         ExtendedAnalyticsDto dto = new ExtendedAnalyticsDto();
 
-        // 1. Топ Мастер
         List<Object[]> mastersData = timetableRepository.getMastersPerformanceData(start, end);
         if (!mastersData.isEmpty()) {
-            Object[] top = mastersData.get(0); // Первый элемент списка - массив данных
+            Object[] top = mastersData.get(0);
             dto.setTopMasterName((String) top[0]);
-            // Безопасное приведение к Double через Number
             dto.setTopMasterRating(top[1] != null ? ((Number) top[1]).doubleValue() : 0.0);
             dto.setTopMasterRevenue(top[3] != null ? ((Number) top[3]).doubleValue() : 0.0);
         }
 
-        // 2. Общая выручка и Тренд (ЗАМЕНА ЛОГИКИ)
         List<Object[]> currentStatsList = timetableRepository.getRevenueAndCount(start, end);
         Object[] currentStats = currentStatsList.isEmpty() ? new Object[]{0.0, 0L} : currentStatsList.get(0);
 
-        // Получаем просто сумму выручки
         Double currentRev = currentStats[0] != null ? ((Number) currentStats[0]).doubleValue() : 0.0;
-        dto.setTotalRevenue(currentRev); // <-- Сохраняем выручку
+        dto.setTotalRevenue(currentRev);
 
-        // Расчет прошлого периода
         long days = ChronoUnit.DAYS.between(start, end);
         LocalDateTime prevStart = start.minusDays(days);
         LocalDateTime prevEnd = start;
@@ -263,16 +245,13 @@ public class ReportServiceImpl implements ReportService {
 
         Double prevRev = prevStats[0] != null ? ((Number) prevStats[0]).doubleValue() : 0.0;
 
-        // Считаем тренд по ВЫРУЧКЕ
         if (prevRev > 0) {
             double trend = ((currentRev - prevRev) / prevRev) * 100.0;
-            dto.setTotalRevenueTrend(trend); // <-- Сохраняем тренд выручки
+            dto.setTotalRevenueTrend(trend);
         } else {
             dto.setTotalRevenueTrend(null);
         }
-        // -------------------------
 
-        // 3. Retention Rate
         Long returning = timetableRepository.countReturningClients(start, end);
         Long total = timetableRepository.countTotalClientsInPeriod(start, end);
         if (total != null && total > 0) {
@@ -281,16 +260,13 @@ public class ReportServiceImpl implements ReportService {
             dto.setRetentionRate(0.0);
         }
 
-        // 4. Доли категорий (Pie Chart)
         List<Object[]> catData = timetableRepository.getCategoryDistribution(start, end);
         Map<String, Long> catMap = new HashMap<>();
         for (Object[] row : catData) {
-            // row[0] это Enum ServiceCategory, приводим к String
             catMap.put(row[0].toString(), (Long) row[1]);
         }
         dto.setCategoryDistribution(catMap);
 
-        // 5. Топ услуг (Funnel)
         List<Object[]> servicesData = timetableRepository.getTopServices(start, end);
         List<ExtendedAnalyticsDto.ServiceUsageDto> topServices = new ArrayList<>();
         for (Object[] row : servicesData) {

@@ -12,7 +12,7 @@
 	<artifactId>barbershop</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>barbershop</name>
-	<description>Веб-приложение для автоматизации работы парикмахерской</description>
+	<description>Аналитическое приложение для салона красоты</description>
 	<url/>
 	<licenses>
 		<license/>

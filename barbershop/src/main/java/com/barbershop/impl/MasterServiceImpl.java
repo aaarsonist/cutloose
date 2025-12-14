@@ -35,7 +35,6 @@ public class MasterServiceImpl implements MasterService {
         Master master = masterRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Master not found with id: " + id));
 
-        // Проверка на наличие будущих записей перед деактивацией
         boolean hasFutureAppointments = timetableRepository.existsByMasterIdAndStatusAndAppointmentTimeAfter(
                 id,
                 BookingStatus.BOOKED,

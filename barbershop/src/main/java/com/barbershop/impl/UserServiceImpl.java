@@ -32,27 +32,18 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public User findOrCreateGuestUser(String email, String name) {
-        // 1. Пытаемся найти пользователя по email
         User existingUser = userRepository.findByUsername(email);
         if (existingUser != null) {
-            return existingUser; // Нашли, возвращаем
+            return existingUser;
         }
 
-        // 2. Если не нашли - создаем нового "гостя"
         User newGuest = new User();
-        newGuest.setUsername(email); // email = username
+        newGuest.setUsername(email);
         newGuest.setName(name);
-
-        // --- ИСПРАВЛЕНИЕ: Устанавливаем роль по умолчанию ---
-        // Это исправит ошибку 'role cannot be null'
         newGuest.setRole(Role.USER);
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
-        // 4. Генерируем случайный пароль-заглушку
         String randomPassword = UUID.randomUUID().toString();
         newGuest.setPassword(passwordEncoder.encode(randomPassword));
 
-        // 5. Сохраняем и возвращаем
         return userRepository.save(newGuest);
     }
 }

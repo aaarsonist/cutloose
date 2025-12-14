@@ -27,7 +27,6 @@ public class ReportController {
         return date.orElse(null);
     }
 
-    // Вспомогательный метод для обработки Optional
     private List<Long> parseIds(Optional<List<Long>> ids) {
         if (ids.isPresent() && ids.get().isEmpty()) {
             return null;
@@ -47,9 +46,6 @@ public class ReportController {
         return ResponseEntity.ok(data);
     }
 
-    /**
-     * Эндпоинт для ГРАФИКА ПОСЕЩЕНИЙ и ТАБЛИЦЫ ОЦЕНОК
-     */
     @GetMapping("/services")
     public ResponseEntity<ServiceReportDataDto> getServiceData(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> startDate,
@@ -63,9 +59,6 @@ public class ReportController {
         return ResponseEntity.ok(data);
     }
 
-    /**
-     * Эндпоинт для ТАБЛИЦЫ МАСТЕРОВ
-     */
     @GetMapping("/masters")
     public ResponseEntity<MasterReportDataDto> getMasterData(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Optional<LocalDateTime> startDate,

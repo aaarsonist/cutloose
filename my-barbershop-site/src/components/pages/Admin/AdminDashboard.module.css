@@ -92,7 +92,6 @@
   color: #888;
 }
 
-/* Стили Слайдера (rc-slider) */
 :global(.rc-slider-track) {
   background-color: #f0a500 !important; 
   height: 5px;
@@ -119,7 +118,6 @@
   box-shadow: 0 0 5px #f0a500 !important;
 }
 
-/* Панель фильтров */
 .filterBar {
   display: flex;
   flex-wrap: wrap;
@@ -151,7 +149,6 @@
   font-size: 0.9rem;
 }
 
-/* Виджеты (Таблицы) */
 .widget {
   background-color: #fff;
   padding: 20px;
@@ -207,7 +204,6 @@
   background-color: #fafafa;
 }
 
-/* Секция Прогнозирования */
 .forecastSection {
   background-color: #fcfcfc;
   padding: 20px;
@@ -360,7 +356,6 @@
   border-color: #ff9f9f;
 }
 
-/* Формы (Редактирование и Добавление) */
 .formToggle {
   font-size: 1.1rem;
   margin-top: 25px;
@@ -400,7 +395,6 @@
   background-color: #d49200;
 }
 
-/* Стили Отзывов (в Управлении) */
 .reviewWidget {
   background-color: #ffffff;
   padding: 20px;
@@ -516,7 +510,6 @@
   font-style: italic;
 }
 
-/* Календарь (react-big-calendar) */
 .calendarHeader {
   display: flex;
   justify-content: space-between;
@@ -566,7 +559,7 @@
   border-color: #d49200 !important;
 }
 
-/* 5. МОДАЛЬНЫЕ ОКНА (Общие, ScheduleEdit, AppointmentInfo, AdminBooking) */
+/* 5. МОДАЛЬНЫЕ ОКНА */
 
 .modalOverlay {
   position: fixed;
@@ -695,7 +688,7 @@
   box-shadow: none !important;
 }
 
-/* Модальное окно (AdminBookingModal) - Слоты времени */
+/* Модальное окно (AdminBookingModal) */
 .timeSlotsContainer {
   display: flex;
   flex-wrap: wrap;
@@ -742,7 +735,6 @@
   border-color: #ff6600 !important;
 }
 
-/* Стиль для кнопки PDF */
 .pdfButton {
     padding: 8px 16px;
     font-size: 0.9rem;
@@ -764,8 +756,6 @@
     background-color: #aaa;
     cursor: not-allowed;
 }
-
-/* Стили для кнопок в toast-подтверждении */
 
 .confirmationToastBody {
     background-color: #ffffff !important; 
@@ -817,7 +807,7 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     text-align: center;
-    border-top: 4px solid #f0a500; /* Акцент сверху */
+    border-top: 4px solid #f0a500; 
 }
 
 .kpiCard h4 {
@@ -846,7 +836,6 @@
     }
 }
 
-/* 6. МЕДИА-ЗАПРОСЫ (Адаптивность) */
 
 @media (max-width: 900px) {
   .dashboardGrid {
@@ -869,48 +858,43 @@
     padding: 10px 0;
   }
 }
-/* 1. Добавляем позиционирование relative контейнеру, чтобы кнопка позиционировалась относительно него */
 .adminContainer {
   display: flex;
   min-height: 80vh;
   width: 100%;
   background-color: #f9f9f9;
-  position: relative; /* <-- Добавлено */
+  position: relative; 
 }
 
-/* 2. Обновляем стиль сайдбара для анимации */
 .sidebar {
   width: 240px;
   background-color: #ffffff;
   border-right: 1px solid #e0e0e0;
-  padding: 20px; /* Отступы по умолчанию */
+  padding: 20px; 
   box-shadow: 2px 0 5px rgba(0,0,0,0.05);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   
-  /* Анимация */
   transition: all 0.3s ease-in-out;
-  overflow: hidden; /* Скрываем контент при сужении */
-  white-space: nowrap; /* Текст не переносится при сужении */
+  overflow: hidden; 
+  white-space: nowrap; 
 }
 
-/* 3. Класс для скрытого состояния */
 .sidebarClosed {
   width: 0;
-  padding: 20px 0; /* Убираем горизонтальные отступы */
+  padding: 20px 0; 
   border-right: none;
   opacity: 0;
 }
 
-/* 4. Стили для кнопки "Бургер" */
 .hamburgerBtn {
   position: absolute;
   top: 15px;
   left: 20px;
-  z-index: 1000; /* Поверх всего */
+  z-index: 1000; 
   
-  background: #f0a500; /* Ваш фирменный цвет */
+  background: #f0a500; 
   color: white;
   border: none;
   border-radius: 4px;
@@ -930,8 +914,7 @@
 }
 
 .sidebar h3 {
-  margin-top: 40px; /* Отступ под кнопку */
-  /* ... остальные стили h3 ... */
+  margin-top: 40px; 
   color: #333;
   font-size: 1.2rem;
   border-bottom: 2px solid #f0a500;

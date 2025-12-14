@@ -26,7 +26,7 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
     private WorkScheduleRepository workScheduleRepository;
 
     @Autowired
-    private MasterRepository masterRepository; // Нужен для привязки
+    private MasterRepository masterRepository;
     @Autowired
     private TimetableRepository timetableRepository;
     private static final LocalTime MIN_OPEN_TIME = LocalTime.of(9, 0);
@@ -49,10 +49,8 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
         LocalTime newStart = scheduleData.getStartTime();
         LocalTime newEnd = scheduleData.getEndTime();
 
-        // 1. Валидация (если это не удаление/выходной)
         if (newStart != null && newEnd != null) {
 
-            // Проверка 1: Диапазон 9:00 - 21:00
             if (newStart.isBefore(MIN_OPEN_TIME) || newEnd.isAfter(MAX_CLOSE_TIME)) {
                 throw new IllegalArgumentException("Рабочее время должно быть в пределах 09:00 - 21:00");
             }
@@ -60,28 +58,22 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
                 throw new IllegalArgumentException("Время начала должно быть раньше времени окончания");
             }
 
-            // Проверка 2: Длительность смены <= 8 часов
             long hours = Duration.between(newStart, newEnd).toHours();
-            // Если нужно точнее (например, 8ч 30мин - это ок или нет?), можно использовать toMinutes()
-            // duration.toMinutes() > 8 * 60
             if (hours > MAX_WORK_HOURS || (hours == MAX_WORK_HOURS && Duration.between(newStart, newEnd).toMinutes() > MAX_WORK_HOURS * 60)) {
                 throw new IllegalArgumentException("Смена не может длиться более 8 часов");
             }
         }
 
-        // 2. Работа с БД
         Optional<WorkSchedule> existingScheduleOpt = workScheduleRepository
                 .findByMasterIdAndDayOfWeek(masterId, day);
 
         WorkSchedule scheduleToSave;
 
         if (existingScheduleOpt.isPresent()) {
-            // Редактирование существующей записи
             scheduleToSave = existingScheduleOpt.get();
             scheduleToSave.setStartTime(newStart);
             scheduleToSave.setEndTime(newEnd);
 
-            // Если стало "Выходной" (время null) -> Удаляем
             checkIfAppointmentsExistOnDay(masterId, day);
             if (newStart == null) {
                 workScheduleRepository.delete(scheduleToSave);
@@ -89,13 +81,11 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
             }
 
         } else {
-            // Создание новой записи (ранее был выходной)
 
             if (newStart == null) {
-                return null; // Был выходной, остался выходной
+                return null;
             }
 
-            // Проверка 3: Лимит рабочих дней в неделю (только при создании нового дня)
             long currentWorkDays = workScheduleRepository.countByMasterId(masterId);
             if (currentWorkDays >= MAX_WORK_DAYS_PER_WEEK) {
                 throw new IllegalArgumentException("Мастер не может работать более 5 дней в неделю");
@@ -113,16 +103,13 @@ public class WorkScheduleServiceImpl implements WorkScheduleService {
 
         return workScheduleRepository.save(scheduleToSave);
     }
-    // Вспомогательный метод проверки
     private void checkIfAppointmentsExistOnDay(Long masterId, DayOfWeek dayToRemove) {
-        // 1. Получаем все будущие активные записи этого мастера
         List<Timetable> futureAppointments = timetableRepository.findByMasterIdAndStatusAndAppointmentTimeAfter(
                 masterId,
                 BookingStatus.BOOKED,
                 LocalDateTime.now()
         );
 
-        // 2. Проверяем, попадает ли хоть одна из них на удаляемый день недели
         boolean hasAppointmentOnThisDay = futureAppointments.stream()
                 .anyMatch(appt -> appt.getAppointmentTime().getDayOfWeek() == dayToRemove);
 

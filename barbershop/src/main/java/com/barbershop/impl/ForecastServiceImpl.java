@@ -25,7 +25,6 @@ public class ForecastServiceImpl implements ForecastService {
     @Autowired
     private WorkScheduleRepository workScheduleRepository;
 
-    // Эта карта используется только для получения русских имен
     private static final Map<DayOfWeek, String> DAY_NAMES_RU = Map.of(
             DayOfWeek.MONDAY, "Пн",
             DayOfWeek.TUESDAY, "Вт",
@@ -39,25 +38,17 @@ public class ForecastServiceImpl implements ForecastService {
     @Override
     public List<ForecastDto> getWeeklyForecast() {
 
-        // --- ЭТАП 1: Рассчитываем "Предложение" (Supply) ---
         Map<DayOfWeek, Double> supplyMap = calculateWeeklySupply();
 
-        // --- ЭТАП 2: Рассчитываем "Исторический Спрос" (Demand) ---
         Map<DayOfWeek, Double> demandMap = calculateWeeklyDemand();
 
         List<ForecastDto> forecastList = new ArrayList<>();
 
-        // --- ЭТАП 3 и 4: Сводим данные и генерируем рекомендации ---
-
-        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-        // Итерируем по DayOfWeek.values() (ПН, ВТ, СР...),
-        // а не по Map.keySet() (случайный порядок).
         for (DayOfWeek day : DayOfWeek.values()) {
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             ForecastDto dto = new ForecastDto();
             dto.setDayOfWeek(day);
-            dto.setDayOfWeekRussian(DAY_NAMES_RU.get(day)); // Получаем имя из карты
+            dto.setDayOfWeekRussian(DAY_NAMES_RU.get(day));
 
             double supply = supplyMap.getOrDefault(day, 0.0);
             double demand = demandMap.getOrDefault(day, 0.0);
@@ -65,11 +56,9 @@ public class ForecastServiceImpl implements ForecastService {
             dto.setSupplyHours(supply);
             dto.setDemandHours(demand);
 
-            // Расчет загрузки (с защитой от деления на ноль)
             double occupancy = (supply == 0) ? 0 : (demand / supply) * 100.0;
             dto.setOccupancy(Math.round(occupancy * 10.0) / 10.0);
 
-            // Генерация рекомендации
             setRecommendation(dto, occupancy);
 
             forecastList.add(dto);
@@ -78,12 +67,7 @@ public class ForecastServiceImpl implements ForecastService {
         return forecastList;
     }
 
-    /**
-     * ЭТАП 1: Рассчитывает общее кол-во рабочих часов в неделю (Предложение)
-     * по всем мастерам из WorkSchedule.
-     */
     private Map<DayOfWeek, Double> calculateWeeklySupply() {
-        // ... (Этот метод не меняется)
         List<WorkSchedule> allSchedules = workScheduleRepository.findAll();
         Map<DayOfWeek, Double> weeklySupplyHours = new EnumMap<>(DayOfWeek.class);
 
@@ -96,12 +80,7 @@ public class ForecastServiceImpl implements ForecastService {
         return weeklySupplyHours;
     }
 
-    /**
-     * ЭТАП 2: Рассчитывает средний исторический спрос в часах
-     * для каждого дня недели.
-     */
     private Map<DayOfWeek, Double> calculateWeeklyDemand() {
-        // ... (Этот метод не меняется)
         List<Timetable> completedBookings = timetableRepository.findAll().stream()
                 .filter(t -> t.getStatus() == BookingStatus.COMPLETED && t.getService() != null)
                 .collect(Collectors.toList());
@@ -110,7 +89,7 @@ public class ForecastServiceImpl implements ForecastService {
         Optional<LocalDateTime> maxDateOpt = timetableRepository.findMaxAppointmentTime();
 
         if (minDateOpt.isEmpty() || maxDateOpt.isEmpty()) {
-            return new EnumMap<>(DayOfWeek.class); // Нет данных
+            return new EnumMap<>(DayOfWeek.class);
         }
 
         long totalDays = ChronoUnit.DAYS.between(minDateOpt.get().toLocalDate(), maxDateOpt.get().toLocalDate()) + 1;
@@ -133,12 +112,7 @@ public class ForecastServiceImpl implements ForecastService {
         return averageHoursPerDay;
     }
 
-    /**
-     * ЭТАП 4: Устанавливает текст рекомендации
-     * на основе вашей градации.
-     */
     private void setRecommendation(ForecastDto dto, double occupancy) {
-        // ... (Этот метод не меняется)
         double roundedOccupancy = Math.round(occupancy * 10.0) / 10.0;
 
         if (roundedOccupancy > 95) {

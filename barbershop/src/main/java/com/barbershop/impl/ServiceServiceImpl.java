@@ -15,7 +15,7 @@ import java.util.List;
 public class ServiceServiceImpl implements ServiceService {
 
     private final ServiceRepository serviceRepository;
-    private final TimetableRepository timetableRepository; // Не забудьте добавить это поле
+    private final TimetableRepository timetableRepository;
 
     @Autowired
     public ServiceServiceImpl(ServiceRepository serviceRepository, TimetableRepository timetableRepository) {
@@ -53,27 +53,18 @@ public class ServiceServiceImpl implements ServiceService {
     @Override
     @Transactional
     public void deleteService(Long id) {
-        // 1. Проверяем, использовалась ли услуга когда-либо (есть ли записи в timetable)
-        // Нам важно сохранить историю, поэтому проверяем ЛЮБЫЕ записи (прошлые и будущие)
         boolean hasAnyBookings = timetableRepository.existsByServiceId(id);
 
         if (hasAnyBookings) {
-            // СЦЕНАРИЙ А: Есть история. Физически удалять нельзя -> "Мягкое" удаление.
             ServiceEntity service = serviceRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Услуга не найдена"));
 
-            // Добавляем префикс, если его еще нет
             if (!service.getName().startsWith("[НЕАКТИВНА]")) {
                 service.setName("[НЕАКТИВНА] " + service.getName());
                 serviceRepository.save(service);
             }
 
-            // Здесь можно было бы добавить проверку на будущие записи,
-            // но так как мы просто "прячем" услугу переименованием,
-            // предстоящие записи (если есть) пройдут штатно, но новую создать будет нельзя.
-
         } else {
-            // СЦЕНАРИЙ Б: История чиста. Можно удалить физически.
             if (serviceRepository.existsById(id)) {
                 serviceRepository.deleteById(id);
             } else {

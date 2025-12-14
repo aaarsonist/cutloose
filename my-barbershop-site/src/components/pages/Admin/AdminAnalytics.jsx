@@ -135,8 +135,6 @@ function AdminAnalytics() {
                 api.get('/api/reports/sales', config), 
                 api.get('/api/reports/services', config), 
                 api.get('/api/reports/masters', config),
-                // Новый запрос (параметры те же, masterIds/serviceIds можно игнорировать если логика бэка их не юзает, 
-                // или передать если вы добавите фильтрацию и туда)
                 api.get('/api/reports/extended', { params: { startDate: isoStartDate, endDate: isoEndDate } })
             ]);
 
@@ -205,7 +203,6 @@ const handleDownloadPDF = () => {
 
         doc.setFont('Mulish', 'normal');
 
-        // === ЗАГОЛОВОК И ФИЛЬТРЫ ===
         doc.setFontSize(18);
         doc.text("Отчет по работе салона красоты CutLoose", 14, y);
         y += 15;
@@ -227,7 +224,6 @@ const handleDownloadPDF = () => {
                 masterOptions.find(opt => opt.value === selected.value)?.label
             ).join(', ');
         }
-        // Обрезка слишком длинных строк мастеров
         if (mastersStr.length > 90) mastersStr = mastersStr.substring(0, 90) + "...";
         doc.text(mastersStr, 14, y);
         y += 7;
@@ -244,7 +240,6 @@ const handleDownloadPDF = () => {
         doc.text(servicesStr, 14, y);
         y += 15;
 
-        // === НОВЫЙ БЛОК: KPI (Показатели из карточек) ===
         if (extendedData) {
             doc.setFontSize(14);
             doc.text("Ключевые показатели эффективности (KPI)", 14, y);
@@ -252,7 +247,6 @@ const handleDownloadPDF = () => {
 
             doc.setFontSize(10);
 
-            // 1. Выручка
             let revenueText = `Общая выручка: ${formatCurrency(extendedData.totalRevenue)}`;
             if (extendedData.totalRevenueTrend != null) {
                 const symbol = extendedData.totalRevenueTrend >= 0 ? "▲" : "▼";
@@ -261,18 +255,16 @@ const handleDownloadPDF = () => {
             doc.text(revenueText, 14, y);
             y += 6;
 
-            // 2. Удержание
             const retention = extendedData.retentionRate ? extendedData.retentionRate.toFixed(1) : 0;
             doc.text(`Коэффициент удержания: ${retention}% клиентов вернулись за повторной услугой`, 14, y);
             y += 6;
 
-            // 3. Топ мастер
             if (extendedData.topMasterName) {
                 doc.text(`Топ мастер: ${extendedData.topMasterName}`, 14, y);
                 y += 5;
-                doc.setTextColor(100); // Серый цвет для деталей
+                doc.setTextColor(100); 
                 doc.text(`   Рейтинг: ${extendedData.topMasterRating?.toFixed(2)} | Выручка: ${formatCurrency(extendedData.topMasterRevenue)}`, 14, y);
-                doc.setTextColor(0); // Возвращаем черный
+                doc.setTextColor(0); 
             } else {
                 doc.text(`Топ мастер: Нет данных`, 14, y);
             }
@@ -284,10 +276,7 @@ const handleDownloadPDF = () => {
             fontStyle: 'normal'
         };
 
-        // === НОВЫЙ БЛОК: ТАБЛИЦЫ КАТЕГОРИЙ И ТОП УСЛУГ ===
-        // Вместо диаграмм выведем аккуратные таблицы, так как это надежнее для PDF
         if (extendedData) {
-            // -- Таблица категорий --
             const catMeta = { HAIR: 'Волосы', FACE: 'Лицо', NAILS: 'Ногти', BEARD: 'Борода' };
             const dist = extendedData.categoryDistribution || {};
             const totalCounts = Object.values(dist).reduce((a, b) => a + b, 0);
@@ -298,7 +287,7 @@ const handleDownloadPDF = () => {
                     const percent = totalCounts > 0 ? ((count / totalCounts) * 100).toFixed(1) + '%' : '0%';
                     return [catMeta[key], count, percent];
                 })
-                .sort((a, b) => b[1] - a[1]); // Сортировка по убыванию
+                .sort((a, b) => b[1] - a[1]); 
 
             if (categoryBody.length > 0) {
                 doc.setFontSize(12);
@@ -311,15 +300,13 @@ const handleDownloadPDF = () => {
                     body: categoryBody,
                     theme: 'grid',
                     styles: tableStyles,
-                    headStyles: { fillColor: [255, 153, 102] } // Оранжевый оттенок
+                    headStyles: { fillColor: [255, 153, 102] } 
                 });
                 y = doc.lastAutoTable.finalY + 10;
             }
 
-            // -- Таблица топ услуг --
             const topServices = extendedData.topServices || [];
             if (topServices.length > 0) {
-                // Проверка места на странице
                 if (y > 240) { doc.addPage(); y = 20; }
 
                 doc.setFontSize(12);
@@ -334,13 +321,12 @@ const handleDownloadPDF = () => {
                     body: topBody,
                     theme: 'grid',
                     styles: tableStyles,
-                    headStyles: { fillColor: [240, 165, 0] } // Желто-оранжевый
+                    headStyles: { fillColor: [240, 165, 0] } 
                 });
                 y = doc.lastAutoTable.finalY + 15;
             }
         }
 
-        // Проверка места перед графиками
         if (salesData && salesData.dailyRevenueDataPoints && salesData.dailyRevenueDataPoints.length > 0) {
             if (y > 240) { doc.addPage(); y = 20; }
             
@@ -360,13 +346,11 @@ const handleDownloadPDF = () => {
                 body: revenueBody,
                 theme: 'grid',
                 styles: tableStyles,
-                // Можно добавить чередование цветов для читаемости длинных таблиц
                 alternateRowStyles: { fillColor: [245, 245, 245] }
             });
             y = doc.lastAutoTable.finalY + 15;
         }
 
-        // === НОВОЕ: ТАБЛИЦА ДИНАМИКИ ПОСЕЩЕНИЙ (Вместо графика) ===
         if (serviceData && serviceData.visitData && serviceData.visitData.length > 0) {
             if (y > 240) { doc.addPage(); y = 20; }
 
@@ -391,13 +375,12 @@ const handleDownloadPDF = () => {
             y = doc.lastAutoTable.finalY + 15;
         }
 
-        // === ТАБЛИЦЫ ЭФФЕКТИВНОСТИ (Как и было) ===
         if (masterData && masterData.masterPerformanceData.length > 0) {
             doc.setFontSize(14);
             doc.text("Эффективность мастеров", 14, y);
             y += 10;
 
-            const masterHead = [['Мастер', 'Записей', 'Выручка', 'Сред. оценка']];
+            const masterHead = [['Мастер', 'Записей', 'Выручка', 'Средняя оценка']];
             const masterBody = masterData.masterPerformanceData.map(m => [
                 m.masterFullName,
                 m.appointmentCount,
@@ -424,7 +407,7 @@ const handleDownloadPDF = () => {
             doc.text("Средние оценки услуг", 14, y);
             y += 10;
 
-            const serviceHead = [['Услуга', 'Сред. оценка']];
+            const serviceHead = [['Услуга', 'Средняя оценка']];
             const serviceBody = serviceData.averageRatings.map(s => [
                 s.serviceName,
                 s.averageRating ? `${s.averageRating.toFixed(1)} ${renderStars(s.averageRating)}` : 'N/A'
@@ -441,8 +424,6 @@ const handleDownloadPDF = () => {
 
         doc.save(`analytics_report_${moment(startDate).format('YYYY-MM-DD')}.pdf`);
     };
-    // Данные для Круговой диаграммы (КАТЕГОРИИ)
-    // 1. Метаданные категорий: Название и Цвет (фиксированные)
     const categoryMeta = {
         HAIR:  { label: 'Волосы', color: '#FF6666' }, 
         FACE:  { label: 'Лицо',   color: '#FF9966' }, 
@@ -450,16 +431,14 @@ const handleDownloadPDF = () => {
         BEARD: { label: 'Борода', color: '#FFFFCC' }
     };
 
-    // 2. Формируем массив данных и СОРТИРУЕМ его по убыванию значения (value)
     const sortedCategories = Object.keys(categoryMeta)
         .map(key => ({
             label: categoryMeta[key].label,
             value: extendedData?.categoryDistribution?.[key] || 0,
             color: categoryMeta[key].color
         }))
-        .sort((a, b) => a.value - b.value); // Сортировка: от большего к меньшему
+        .sort((a, b) => a.value - b.value);
 
-    // 3. Собираем итоговый объект для графика
     const categoryChartData = {
         labels: sortedCategories.map(item => item.label),
         datasets: [{
@@ -472,21 +451,20 @@ const handleDownloadPDF = () => {
 
     const genderChartOptions = {
         responsive: true,
-        maintainAspectRatio: false, // Позволяет диаграмме лучше вписываться в контейнер
+        maintainAspectRatio: false, 
         plugins: {
             legend: {
-                position: 'top',      // <-- Легенда сверху ("выше")
-                reverse: true,      // <-- РАЗМЕЩАЕТ ЛЕГЕНДУ В РЯД СВЕРХУ
-                align: 'center',      // Центрирует легенду
+                position: 'top',    
+                reverse: true,      
+                align: 'center',     
                 labels: {
-                    usePointStyle: true, // Делает маркеры круглыми (аккуратнее в ряд)
-                    padding: 20          // Отступ между элементами легенды
+                    usePointStyle: true, 
+                    padding: 20          
                 }
             },
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        // Логика для отображения ТОЛЬКО ПРОЦЕНТОВ
                         let label = context.label || '';
                         if (label) {
                             label += ': ';
@@ -495,25 +473,23 @@ const handleDownloadPDF = () => {
                         const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
                         const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
 
-                        return label + percentage; // Возвращаем "Категория: 45.5%"
+                        return label + percentage; 
                     }
                 }
             }
         }
     };
 
-    // Данные для Воронки (Горизонтальный бар)
     const funnelChartData = {
         labels: extendedData?.topServices?.map(s => s.serviceName) || [],
         datasets: [{
             label: 'Количество записей',
             data: extendedData?.topServices?.map(s => s.usageCount) || [],
             backgroundColor: '#f0a500',
-            indexAxis: 'y', // Делает график горизонтальным
+            indexAxis: 'y', 
         }]
     };
     
-    // Опция для горизонтального бара, чтобы он выглядел как воронка
     const funnelOptions = {
         indexAxis: 'y',
         responsive: true,
@@ -523,7 +499,6 @@ const handleDownloadPDF = () => {
     return (
         <div className={styles.analyticsPage}>
            <div className={styles.kpiGrid}>
-                {/* Карточка 1: Топ Мастер */}
                 <div className={styles.kpiCard}>
                     <h4>Топ Мастер</h4>
                     {extendedData?.topMasterName ? (
@@ -536,15 +511,12 @@ const handleDownloadPDF = () => {
                     ) : <span>Нет данных</span>}
                 </div>
 
-                {/* Карточка 2: Общая выручка */}
                 <div className={styles.kpiCard}>
                     <h4>Общая выручка</h4>
                     <div className={styles.kpiValue}>
-                        {/* Используем новое поле totalRevenue */}
                         {formatCurrency(extendedData?.totalRevenue)}
                     </div>
                     <div className={styles.kpiSubtext}>
-                        {/* Используем новое поле totalRevenueTrend */}
                         {extendedData?.totalRevenueTrend != null ? (
                             <>
                                 {extendedData.totalRevenueTrend >= 0 ? (
@@ -560,7 +532,6 @@ const handleDownloadPDF = () => {
                     </div>
                 </div>
 
-                {/* Карточка 3: Удержание */}
                 <div className={styles.kpiCard}>
                     <h4>Коэффициент удержания</h4>
                     <div className={styles.kpiValue}>
@@ -570,12 +541,10 @@ const handleDownloadPDF = () => {
                 </div>
             </div>
 
-            {/* === РЯД НОВЫХ ГРАФИКОВ === */}
             <div className={styles.dashboardGrid}>
                 <div className={styles.widget}>
                     <h3>Доли категорий услуг</h3>
                     <div style={{ height: '250px', display: 'flex', justifyContent: 'center' }}>
-                        {/* Передаем новые данные categoryChartData */}
                         {extendedData ? <Doughnut data={categoryChartData} options={genderChartOptions} /> : "Загрузка..."}
                     </div>
                 </div>
@@ -644,7 +613,7 @@ const handleDownloadPDF = () => {
                     <div className={styles.tableContainer}>
                         <table>
                             <thead>
-                                <tr><th>Мастер</th><th>Записей</th><th>Выручка</th><th>Сред. оценка</th></tr>
+                                <tr><th>Мастер</th><th>Записей</th><th>Выручка</th><th>Средняя оценка</th></tr>
                             </thead>
                             <tbody>
                                 {masterData?.masterPerformanceData.length > 0 ? masterData.masterPerformanceData.map(m => (
@@ -664,7 +633,7 @@ const handleDownloadPDF = () => {
                     <div className={styles.tableContainer}>
                         <table>
                             <thead>
-                                <tr><th>Услуга</th><th>Сред. оценка</th></tr>
+                                <tr><th>Услуга</th><th>Средняя оценка</th></tr>
                             </thead>
                             <tbody>
                                 {serviceData?.averageRatings.length > 0 ? serviceData.averageRatings.map(r => (

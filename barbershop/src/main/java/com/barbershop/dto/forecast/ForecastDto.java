@@ -7,12 +7,12 @@ import java.time.DayOfWeek;
 public class ForecastDto {
 
     private DayOfWeek dayOfWeek;
-    private String dayOfWeekRussian; // Для удобства фронтенда
+    private String dayOfWeekRussian;
 
-    private double supplyHours;      // Предложение (из WorkSchedule)
-    private double demandHours;      // Спрос (из Timetable)
-    private double occupancy;        // Загрузка (demand / supply)
+    private double supplyHours;
+    private double demandHours;
+    private double occupancy;
 
-    private String recommendationLevel; // "LOW", "OPTIMAL", "HIGH", "CRITICAL"
-    private String recommendationText;  // "НИЗКАЯ ЭФФЕКТИВНОСТЬ..."
+    private String recommendationLevel;
+    private String recommendationText;
 }

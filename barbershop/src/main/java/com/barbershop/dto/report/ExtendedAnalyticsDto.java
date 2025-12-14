@@ -6,22 +6,17 @@ import java.util.List;
 
 @Data
 public class ExtendedAnalyticsDto {
-    // Карточка 1: Топ мастер
     private String topMasterName;
     private Double topMasterRevenue;
     private Double topMasterRating;
 
-    // Карточка 2: Общая выручка
     private Double totalRevenue;
     private Double totalRevenueTrend;
 
-    // Карточка 3: Удержание
-    private Double retentionRate; // Процент
+    private Double retentionRate;
 
-    // Круговая диаграмма (Мужчины vs Женщины)
     private Map<String, Long> categoryDistribution;
 
-    // Воронка (Топ услуг)
     private List<ServiceUsageDto> topServices;
 
     @Data
